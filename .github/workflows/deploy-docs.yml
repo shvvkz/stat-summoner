@@ -20,7 +20,7 @@ jobs:
         override: true
 
     - name: Generate documentation
-      run: cargo doc --no-deps
+      run: cargo doc --no-deps --document-private-items --output-dir ./docs  # Génère dans ./docs
 
     - name: Disable Jekyll (add .nojekyll file)
       run: echo "" > ./target/doc/.nojekyll
