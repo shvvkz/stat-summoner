@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["__loader","__runner","__shuttle_main","main"],"mod":["commands","embed","models","riot_api","utils"]};

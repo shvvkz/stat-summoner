@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["get_champions","get_matchs_id","get_matchs_info","get_puuid","get_rank_info","get_summoner_id","open_dd_json"]};
