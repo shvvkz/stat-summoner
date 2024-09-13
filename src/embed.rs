@@ -6,6 +6,8 @@ use crate::riot_api::*;
 use crate::utils::*;
 use reqwest::Client;
 use serenity::builder::CreateEmbed;
+use tokio::time::{sleep, Duration};
+use poise::ReplyHandle;
 
 /// ⚙️ **Function**: Fetches data and creates an embed displaying League of Legends player stats and match details.
 ///
@@ -401,4 +403,88 @@ fn create_embed(
                 false
             );
         embed
+    }
+
+
+/// ⚙️ **Function**: Creates an embed displaying an error message for Discord interactions.
+/// 
+/// This function constructs a Discord embed message that displays a given error message in a formatted way. 
+/// The embed is styled with a red color to indicate an error and includes a default title of "Error".
+/// The embed is returned as part of a `CreateReply`, which can be sent to a Discord channel.
+///
+/// # Parameters:
+/// - `error_message`: A string slice containing the error message to be displayed in the embed's description.
+///   This message is intended to provide feedback to the user, typically in case of API errors, invalid inputs, 
+///   or other issues encountered during the bot's execution.
+///
+/// # Returns:
+/// - `CreateReply`: A response object that includes the error embed. This is ready to be sent to a Discord channel.
+///
+/// # ⚠️ Notes:
+/// - The embed's color is set to red (`0xff0000`) to visually signify an error.
+/// - The title of the embed is always set to "Error", and the provided `error_message` is used in the description.
+/// - The function is primarily used to provide user-friendly error messages in response to invalid inputs 
+///   or issues in API calls.
+///
+/// # Example:
+/// ```rust
+/// let error_reply = create_embed_error("Failed to fetch data from the Riot API.");
+/// ctx.send(error_reply).await?;
+/// ```
+///
+/// The resulting embed message will look like this:
+/// ```text
+/// ❌ **Error**
+/// Failed to fetch data from the Riot API.
+/// ```
+pub fn create_embed_error(
+    error_message: &str
+    ) -> CreateReply {
+        let embed : CreateEmbed = CreateEmbed::default()
+            .title("Error")
+            .description(error_message)
+            .color(0xff0000);
+        CreateReply {
+            embeds: vec![embed],
+            ..Default::default()
+        }
+    }
+
+/// ⚙️ **Function**: Schedules the deletion of a Discord message after a delay.
+///
+/// This function delays the deletion of a Discord message by 60 seconds. After the delay, the function attempts
+/// to delete the message from the channel. It ensures that messages sent by the bot (e.g., error messages or
+/// status updates) are automatically removed after a certain time to keep the chat clean.
+///
+/// # Parameters:
+/// - `sent_message`: A `ReplyHandle` representing the message to be deleted. This handle provides access to the
+///   message object, allowing the function to delete it once the delay has passed.
+/// - `ctx`: The application context, which provides access to Discord methods (such as message deletion)
+///   and other necessary data like API keys.
+///
+/// # Returns:
+/// - `Result<(), Error>`: If successful, returns `Ok(())`. If an error occurs while fetching the message
+///   or deleting it, returns an `Error`.
+///
+/// # ⚠️ Notes:
+/// - The function uses `tokio::time::sleep` to pause execution for 60 seconds before attempting to delete the message.
+/// - If the message cannot be fetched (e.g., due to permissions or being deleted manually), the deletion attempt will silently fail.
+/// - This function is typically used in scenarios where temporary messages (like errors or status updates)
+///   need to be cleaned up automatically after a short period.
+///
+/// # Example:
+/// ```rust
+/// schedule_message_deletion(sent_message, ctx).await?;
+/// ```
+///
+/// After 60 seconds, the message will be deleted from the Discord channel.
+pub async fn schedule_message_deletion(
+    sent_message: ReplyHandle<'_>,
+    ctx: poise::ApplicationContext<'_, Data, Error>
+    ) -> Result<(), Error> {
+        sleep(Duration::from_secs(60)).await;
+        if let Ok(sent_msg) = sent_message.message().await {
+            sent_msg.delete(&ctx.serenity_context().http).await?;
+        }
+        Ok(())
     }

@@ -138,7 +138,6 @@ pub async fn get_summoner_id(
         let summoner_json: Value = response.json().await?;
         let summoner_id = summoner_json.get("id").and_then(Value::as_str).unwrap_or("").to_string();
         if summoner_id.is_empty() {
-            error!("Error retrieving summoner ID for PUUID: {}", puuid); // Log error
             Err("Error retrieving summoner ID, check the region, game name and tag line you wrote.".into())
         } else {
             Ok(summoner_id)

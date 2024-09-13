@@ -16,3 +16,4 @@ tokio = {version = "1.26.0", features = ["full"]}
 reqwest = {version = "0.12.7", features = ["json"]}
 serde_json = "1.0.70"
 chrono ={ version = "0.4.19", features = ["serde"] }
+mongodb = "3.1.0"
