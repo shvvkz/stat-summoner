@@ -3,7 +3,7 @@ name: Deploy Rust Documentation
 on:
   push:
     branches:
-      - main  # Ou master, selon la branche principale de votre projet
+      - main
 
 jobs:
   build:
@@ -20,7 +20,7 @@ jobs:
         override: true
 
     - name: Generate documentation
-      run: cargo doc --no-deps --document-private-items --output-dir ./docs  # Génère dans ./docs
+      run: cargo doc --no-deps
 
     - name: Disable Jekyll (add .nojekyll file)
       run: echo "" > ./target/doc/.nojekyll
