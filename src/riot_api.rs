@@ -2,7 +2,6 @@ use reqwest::Client;
 use serde_json::Value;
 use std::collections::HashMap;
 use crate::models::Error;
-use tracing::log::error;
 
 /// ⚙️ **Function**: Fetches the player's PUUID (Player Unique Identifier) from the Riot API.
 ///
@@ -47,7 +46,7 @@ pub async fn get_puuid(
         let puuid = puuid_json.get("puuid").and_then(Value::as_str).unwrap_or("").to_string();
 
         if puuid.is_empty() {
-            Err("This player doesn't not exist, check the region, game name and tag line you wrote.".into())
+            Err("The player could not be found. Please verify that the region, game name, and tag line you provided are correct, and try again.".into())
         } else {
             Ok(puuid)
         }
@@ -138,7 +137,7 @@ pub async fn get_summoner_id(
         let summoner_json: Value = response.json().await?;
         let summoner_id = summoner_json.get("id").and_then(Value::as_str).unwrap_or("").to_string();
         if summoner_id.is_empty() {
-            Err("Error retrieving summoner ID, check the region, game name and tag line you wrote.".into())
+            Err("Error retrieving summoner ID. Please verify that the region, game name, and tag line you provided are correct, and try again.".into())
         } else {
             Ok(summoner_id)
         }
@@ -291,7 +290,7 @@ pub async fn get_champions(
 /// ```
 pub async fn open_dd_json(
     ) -> Result<Value, Error> {
-        let dd_json = reqwest::get("https://ddragon.leagueoflegends.com/cdn/14.17.1/data/fr_FR/champion.json").await?.json().await?;
+        let dd_json = reqwest::get("https://ddragon.leagueoflegends.com/cdn/14.18.1/data/fr_FR/champion.json").await?.json().await?;
         Ok(dd_json)
     }
 

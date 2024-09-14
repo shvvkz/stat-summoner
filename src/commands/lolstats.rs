@@ -1,9 +1,11 @@
+use mongodb::bson::de;
 use poise::Modal;
 use reqwest::Client;
 use std::collections::HashMap;
 use crate::models::{Data, Error, LolStatsModal, Region};
 use crate::riot_api::{get_puuid, get_summoner_id, get_rank_info, get_champions, get_matchs_id};
 use crate::embed::{create_and_send_embed, create_embed_error, schedule_message_deletion};
+use crate::utils::determine_solo_flex;
 
 /// ⚙️ **Command Function**: Fetches and displays LoL player stats based on user input.
 ///
@@ -74,7 +76,7 @@ pub async fn lolstats(
                 let error_message = format!("Error fetching PUUID: {}", e);
                 let reply = ctx.send(create_embed_error(&error_message)).await?;
                 let _ = schedule_message_deletion(reply, ctx).await;
-                return Err(e);
+                return Err(Error::from(""));
             }
         };
 
@@ -84,21 +86,11 @@ pub async fn lolstats(
                 let error_message = format!("Error fetching summoner ID: {}", e);
                 let reply = ctx.send(create_embed_error(&error_message)).await?;
                 let _ = schedule_message_deletion(reply, ctx).await;
-                return Err(e);
+                return Err(Error::from(""));
             }
         };
 
-        let rank_info = match get_rank_info(&client, &region_str, &summoner_id, &ctx.data().riot_api_key).await {
-            Ok(info) => info,
-            Err(e) => {
-                let error_message = format!("Error fetching rank info: {}", e);
-                let reply = ctx.send(create_embed_error(&error_message)).await?;
-                let _ = schedule_message_deletion(reply, ctx).await;
-                return Err(e);
-            }
-        };
-
-        // Continuez avec le reste de la logique et assurez-vous de supprimer tous les messages envoyés
+        let rank_info = get_rank_info(&client, &region_str, &summoner_id, &ctx.data().riot_api_key).await?;
         let champions = get_champions(&client, &puuid, &region_str, &ctx.data().riot_api_key).await?;
         let match_ids = get_matchs_id(&client, &puuid, &ctx.data().riot_api_key).await?;
 
@@ -108,13 +100,9 @@ pub async fn lolstats(
         default_rank.insert("leaguePoints".to_string(), serde_json::Value::Number(0.into()));
         default_rank.insert("wins".to_string(), serde_json::Value::Number(0.into()));
         default_rank.insert("losses".to_string(), serde_json::Value::Number(0.into()));
-
-        let solo_rank = &rank_info.get(0).unwrap_or(&default_rank);
-        let flex_rank = rank_info.get(1).unwrap_or(&default_rank);
-
-        let reply = create_and_send_embed(&modal_data, summoner_id, solo_rank, flex_rank, champions, match_ids, &ctx).await;
-
-        // Envoyer le message final et le supprimer après 60 secondes
+        default_rank.insert("queueType".to_string(), serde_json::Value::String("".to_string()));
+        let (solo_rank, flex_rank) = determine_solo_flex(&rank_info, &default_rank);
+        let reply = create_and_send_embed(&modal_data, summoner_id, &solo_rank, &flex_rank, champions, match_ids, &ctx).await;
         let sent_message = ctx.send(reply).await?;
         if let Err(e) = schedule_message_deletion(sent_message, ctx).await {
             eprintln!("Failed to schedule message deletion: {}", e);
