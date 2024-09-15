@@ -1,10 +1,34 @@
 use poise::Modal;
+use serde::{Deserialize, Serialize};
 
 pub struct Data {
     pub riot_api_key: String,
+    pub mongodb_uri: String,
 }
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct SummonerFollowedData {
+    puuid: String,
+    summoner_id: String,
+    name: String,
+    tag: String,
+    region: String,
+    rank_solo: String,
+    tier_solo: String,
+    lp_solo: String,
+    rank_flex: String,
+    tier_flex: String,
+    lp_flex: String,
+    last_match: LastMatch,
+    time_left_follow: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct LastMatch {
+    match_id: String,
+}
 
 #[derive(Debug, poise::ChoiceParameter)]
 pub enum Region {

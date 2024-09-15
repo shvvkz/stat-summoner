@@ -2591,6 +2591,7 @@ dependencies = [
  "mongodb",
  "poise",
  "reqwest 0.12.7",
+ "serde",
  "serde_json",
  "shuttle-runtime",
  "shuttle-serenity",

@@ -9,6 +9,8 @@ use poise::serenity_prelude::{self as serenity};
 use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
 use commands::lolstats::lolstats;
+use commands::followgames::followgames;
+
 
 /// ⚙️ **Function**: Initializes and starts the Discord bot using the Shuttle runtime and Poise framework.
 ///
@@ -49,10 +51,13 @@ async fn main(
         let riot_api_key = secret_store
             .get("RIOT_API_KEY")
             .ok_or_else(|| anyhow::anyhow!("'RIOT_API_KEY' was not found"))?;
-
+        let mongodb_uri = secret_store
+            .get("MONGODB_URI")
+            .ok_or_else(|| anyhow::anyhow!("'MONGODB_URI' was not found"))?;
+        
         let framework = poise::Framework::builder()
             .options(poise::FrameworkOptions {
-                commands: vec![lolstats()],
+                commands: vec![lolstats(), followgames()],
                 ..Default::default()
             })
             .setup(move |_ctx, _ready, _framework| {
@@ -60,6 +65,7 @@ async fn main(
                     poise::builtins::register_globally(_ctx, &_framework.options().commands).await?;
                     Ok(Data {
                         riot_api_key,
+                        mongodb_uri,
                     })
                 })
             })
