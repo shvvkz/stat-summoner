@@ -1,33 +1,30 @@
 use poise::Modal;
 use serde::{Deserialize, Serialize};
+use mongodb::Client;
 
 pub struct Data {
     pub riot_api_key: String,
-    pub mongodb_uri: String,
+    pub mongo_client: Client,
 }
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
+/// Structure représentant les données d'un utilisateur suivi dans MongoDB
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SummonerFollowedData {
-    puuid: String,
-    summoner_id: String,
-    name: String,
-    tag: String,
-    region: String,
-    rank_solo: String,
-    tier_solo: String,
-    lp_solo: String,
-    rank_flex: String,
-    tier_flex: String,
-    lp_flex: String,
-    last_match: LastMatch,
-    time_left_follow: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct LastMatch {
-    match_id: String,
+    pub puuid: String,
+    pub summoner_id: String,
+    pub name: String,
+    pub tag: String,
+    pub region: String,
+    pub rank_solo: String,
+    pub tier_solo: String,
+    pub lp_solo: String,
+    pub rank_flex: String,
+    pub tier_flex: String,
+    pub lp_flex: String,
+    pub last_match_id: String, // Champ rendu optionnel
+    pub time_left_follow: String,
 }
 
 #[derive(Debug, poise::ChoiceParameter)]
