@@ -79,7 +79,7 @@ async fn main(
             sleep(Duration::from_secs(120)).await; // Attendre 2 minutes
         }
     });
-
+    let dd_json = riot_api::open_dd_json().await.unwrap();
     // Configurer le framework Poise avec les commandes
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -89,11 +89,13 @@ async fn main(
         .setup(move |_ctx, _ready, _framework| {
             let riot_api_key = riot_api_key.clone();
             let mongo_client = mongo_client.clone();
+            let dd_json = dd_json.clone();
             Box::pin(async move {
                 poise::builtins::register_globally(_ctx, &_framework.options().commands).await?;
                 Ok(Data {
                     riot_api_key,
-                    mongo_client,  // Passer le client MongoDB à la structure Data
+                    mongo_client,
+                    dd_json,
                 })
             })
         })

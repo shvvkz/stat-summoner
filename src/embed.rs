@@ -5,7 +5,7 @@ use crate::models::*;
 use crate::riot_api::*;
 use crate::utils::*;
 use reqwest::Client;
-use serenity::builder::CreateEmbed;
+use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 use tokio::time::{sleep, Duration};
 use poise::ReplyHandle;
 
@@ -59,7 +59,7 @@ pub async fn create_and_send_embed(
     ctx: &poise::ApplicationContext<'_, Data, Error>,
     ) -> CreateReply {
 
-        let dd_json = open_dd_json().await.unwrap();
+        let dd_json = &ctx.data().dd_json;
         let champions_data = dd_json["data"].as_object().unwrap();
 
         let solo_rank = extract_rank_info(solo_rank);
@@ -401,7 +401,9 @@ fn create_embed(
                     }).collect::<String>()
                 },
                 false
-            );
+            )
+            .footer(CreateEmbedFooter::new("Ce message sera supprimé dans 60 secondes."));
+            
         embed
     }
 
