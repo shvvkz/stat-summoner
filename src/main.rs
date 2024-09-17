@@ -4,6 +4,7 @@ mod embed;
 mod utils;
 mod commands;
 
+use chrono::Utc;
 use models::Data;
 use poise::serenity_prelude::{self as serenity};
 use riot_api::get_matchs_id;
@@ -131,19 +132,23 @@ async fn check_and_update_db(mongo_client: &Client, riot_api_key: &str) -> Resul
         while let Some(result) = cursor.next().await {
             match result {
                 Ok(followed_summoner) => {
-                    let puuid = followed_summoner.puuid;
-                    let summoner_id = followed_summoner.summoner_id;
-                    let last_match_id = followed_summoner.last_match_id;
-                    let client = reqwest::Client::new();
-                    // Use riot_api_key passed as a parameter
-                    let match_id_from_riot = get_matchs_id(&client, &puuid, riot_api_key, 1).await.unwrap()[0].to_string();
-                    if last_match_id == match_id_from_riot {
-                        eprint!("pas de nouvelle partie");
+                    let time_end_follow = followed_summoner.time_end_follow;
+                    let timestamp = Utc::now().timestamp();
+                    if timestamp > time_end_follow.parse::<i64>().unwrap() {
+                        eprint!("Suppression de {}", followed_summoner.puuid);
+                        collection.delete_one(doc! { "puuid": followed_summoner.puuid }).await?;
                     }
-                    else {
-                        eprint!("Nouvelle partie pour : {}", puuid);
+                    else{
+                        let puuid = followed_summoner.puuid;
+                        let summoner_id = followed_summoner.summoner_id;
+                        let last_match_id = followed_summoner.last_match_id;
+                        let client = reqwest::Client::new();
+                        // Use riot_api_key passed as a parameter
+                        let match_id_from_riot = get_matchs_id(&client, &puuid, riot_api_key, 1).await.unwrap()[0].to_string();
+                        if last_match_id != match_id_from_riot {
+                            collection.update_one(doc! { "puuid": puuid }, doc! { "$set": { "last_match_id": match_id_from_riot } }).await?;
+                        }
                     }
-                    
                 }
                 Err(e) => {
                     println!("Erreur lors de la récupération d'un document : {:?}", e);

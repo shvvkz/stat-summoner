@@ -304,6 +304,104 @@ async fn extract_match_info(
         match_details
     }
 
+fn extract_participant_stats(p: &Value) -> Value {
+    let summoner_name = p["summonerName"].as_str().unwrap_or("Unknown");
+    let champion_name = p["championName"].as_str().unwrap_or("Unknown");
+    let kills = p["kills"].as_u64().unwrap_or(0);
+    let deaths = p["deaths"].as_u64().unwrap_or(0);
+    let assists = p["assists"].as_u64().unwrap_or(0);
+    let total_minions_killed = p["totalMinionsKilled"].as_u64().unwrap_or(0);
+    let neutral_minions_killed = p["neutralMinionsKilled"].as_u64().unwrap_or(0);
+    let total_farm = total_minions_killed + neutral_minions_killed;
+
+    serde_json::json!({
+        "summonerName": summoner_name,
+        "championName": champion_name,
+        "kills": kills,
+        "deaths": deaths,
+        "assists": assists,
+        "totalFarm": total_farm
+    })
+}
+async fn extract_match_info_advanced(p: &Value) -> Value {
+    let summoner_name = p["summonerName"].as_str().unwrap_or("Unknown");
+    let champion_name = p["championName"].as_str().unwrap_or("Unknown");
+    let kills = p["kills"].as_u64().unwrap_or(0);
+    let deaths = p["deaths"].as_u64().unwrap_or(0);
+    let assists = p["assists"].as_u64().unwrap_or(0);
+    let total_minions_killed = p["totalMinionsKilled"].as_u64().unwrap_or(0);
+    let neutral_minions_killed = p["neutralMinionsKilled"].as_u64().unwrap_or(0);
+    let total_farm = total_minions_killed + neutral_minions_killed;
+
+    serde_json::json!({
+        "summonerName": summoner_name,
+        "championName": champion_name,
+        "kills": kills,
+        "deaths": deaths,
+        "assists": assists,
+        "totalFarm": total_farm
+    })
+}
+
+/// Traite les informations d'un match pour extraire les détails des participants.
+/// Retourne un objet JSON structuré ou `None` si le mode de jeu n'est pas valide.
+fn get_match_details(match_info: &Value, summoner_id: &str) -> Option<Value> {
+    let queue_id = match_info["info"]["queueId"].as_i64().unwrap_or(-1);
+    if !is_valid_game_mode(queue_id) {
+        return None;
+    }
+
+    let participants = match_info["info"]["participants"].as_array()?;
+
+    // Trouver le participant correspondant au summoner_id
+    let participant = participants
+        .iter()
+        .find(|p| p["summonerId"].as_str().unwrap_or("") == summoner_id)?;
+
+    let team_id = participant["teamId"].as_i64().unwrap_or(0);
+    let win = participant["win"].as_bool().unwrap_or(false);
+    let game_result = if win { "Victory" } else { "Defeat" };
+
+    // Séparer les participants par équipe
+    let mut team_participants: HashMap<String, &Value> = HashMap::new();
+    let mut enemy_participants: HashMap<String, &Value> = HashMap::new();
+
+    for p in participants {
+        let position = p["teamPosition"].as_str().unwrap_or("UNKNOWN").to_string();
+        let p_team_id = p["teamId"].as_i64().unwrap_or(0);
+        if p_team_id == team_id {
+            team_participants.insert(position.clone(), p);
+        } else {
+            enemy_participants.insert(position.clone(), p);
+        }
+    }
+
+    let roles = vec!["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
+
+    let mut matchups = Vec::new();
+
+    for role in roles {
+        if let (Some(team_p), Some(enemy_p)) =
+            (team_participants.get(role), enemy_participants.get(role))
+        {
+            let team_stats = extract_participant_stats(team_p);
+            let enemy_stats = extract_participant_stats(enemy_p);
+
+            let matchup = serde_json::json!({
+                "role": role,
+                "team": team_stats,
+                "enemy": enemy_stats
+            });
+
+            matchups.push(matchup);
+        }
+    }
+
+    Some(serde_json::json!({
+        "gameResult": game_result,
+        "matchups": matchups
+    }))
+}
 /// ⚙️ **Function**: Creates a rich embed message displaying League of Legends player stats and match details.
 ///
 /// This function constructs a `CreateEmbed` message containing information about the player's Solo/Duo and Flex ranks,

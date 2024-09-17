@@ -353,6 +353,7 @@ pub async fn get_matchs_info(
             "https://europe.api.riotgames.com/lol/match/v5/matches/{}?api_key={}",
             match_id, riot_api_key
         );
+        eprint!("Fetching match data from {}...", matchs_info_url);
         let response = client.get(&matchs_info_url).send().await?;
         let matchs_info: Value = response.json().await?;
         Ok(matchs_info)
