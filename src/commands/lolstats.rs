@@ -4,13 +4,13 @@ use std::collections::HashMap;
 use crate::models::{Data, Error, LolStatsModal, Region};
 use crate::riot_api::{get_puuid, get_summoner_id, get_rank_info, get_champions, get_matchs_id};
 use crate::embed::{create_and_send_embed, create_embed_error, schedule_message_deletion};
-use crate::utils::determine_solo_flex;
+use crate::utils::{determine_solo_flex, region_to_string};
 use futures::join;
 
-/// ⚙️ **Command Function**: Fetches and displays LoL player stats based on user input.
+/// ⚙️ Fetches and displays LoL player stats based on user input.
 ///
-/// This Discord command allows a user to input their League of Legends in-game name and tag, then fetches 
-/// the player's Solo/Duo and Flex rank, top champions, and recent match details from the Riot API. 
+/// This Discord command allows a user to input their League of Legends in-game name and tag, then fetches
+/// the player's Solo/Duo and Flex rank, top champions, and recent match details from the Riot API.
 /// The results are displayed in a formatted embed and automatically deleted after 60 seconds.
 ///
 /// # Parameters:
@@ -41,7 +41,9 @@ use futures::join;
 /// K/D/A: **10/2/8** | **200 CS** | Duration: **30:45**
 /// ⏳ Played: **2 hours ago**
 /// ```
-#[poise::command(slash_command)]
+#[poise::command(
+    slash_command,
+)]
 pub async fn lolstats(
     ctx: poise::ApplicationContext<'_, Data, Error>,
     #[description = "Select your region"] region: Region,
@@ -52,41 +54,28 @@ pub async fn lolstats(
                 let error_message = "Modal data not found.";
                 let reply = ctx.send(create_embed_error(&error_message)).await?;
                 schedule_message_deletion(reply, ctx).await?;
-                return Ok(()); // Retourne Ok(()) pour terminer proprement
+                return Ok(());
             },
             Err(_) => {
                 let error_message = "Failed to retrieve modal data.";
                 let reply = ctx.send(create_embed_error(&error_message)).await?;
                 schedule_message_deletion(reply, ctx).await?;
-                return Ok(()); // Retourne Ok(()) pour terminer proprement
+                return Ok(());
             },
         };
 
         let client = Client::new();
         let game_name_space = modal_data.game_name.replace(" ", "%20");
 
-        let region_str = match region {
-            Region::NA => "na1",
-            Region::EUW => "euw1",
-            Region::EUNE => "eun1",
-            Region::KR => "kr",
-            Region::BR => "br1",
-            Region::LAN => "la1",
-            Region::LAS => "la2",
-            Region::OCE => "oc1",
-            Region::RU => "ru",
-            Region::TR => "tr1",
-            Region::JP => "jp1",
-        };
+        let region_str = region_to_string(&region);
 
-        // Capturer chaque erreur et envoyer un message d'erreur si nécessaire
         let puuid = match get_puuid(&client, &game_name_space, &modal_data.tag_line, &ctx.data().riot_api_key).await {
             Ok(puuid) => puuid,
             Err(e) => {
                 let error_message = format!("Error fetching PUUID: {}", e);
                 let reply = ctx.send(create_embed_error(&error_message)).await?;
                 schedule_message_deletion(reply, ctx).await?;
-                return Ok(()); // Retourne Ok(()) pour terminer proprement
+                return Ok(());
             }
         };
 
@@ -96,25 +85,23 @@ pub async fn lolstats(
                 let error_message = format!("Error fetching summoner ID: {}", e);
                 let reply = ctx.send(create_embed_error(&error_message)).await?;
                 schedule_message_deletion(reply, ctx).await?;
-                return Ok(()); // Retourne Ok(()) pour terminer proprement
+                return Ok(());
             }
         };
 
-        // Utiliser join! pour exécuter les appels asynchrones en parallèle
         let (rank_info_res, champions_res, match_ids_res) = join!(
             get_rank_info(&client, &region_str, &summoner_id, &ctx.data().riot_api_key),
             get_champions(&client, &puuid, &region_str, &ctx.data().riot_api_key),
-            get_matchs_id(&client, &puuid, &ctx.data().riot_api_key)
+            get_matchs_id(&client, &puuid, &ctx.data().riot_api_key, 5)
         );
 
-        // Gérer les erreurs après join!
         let rank_info = match rank_info_res {
             Ok(info) => info,
             Err(e) => {
                 let error_message = format!("Error fetching rank info: {}", e);
                 let reply = ctx.send(create_embed_error(&error_message)).await?;
                 schedule_message_deletion(reply, ctx).await?;
-                return Ok(()); // Retourne Ok(()) pour terminer proprement
+                return Ok(());
             }
         };
 
@@ -124,7 +111,7 @@ pub async fn lolstats(
                 let error_message = format!("Error fetching champions: {}", e);
                 let reply = ctx.send(create_embed_error(&error_message)).await?;
                 schedule_message_deletion(reply, ctx).await?;
-                return Ok(()); // Retourne Ok(()) pour terminer proprement
+                return Ok(());
             }
         };
 

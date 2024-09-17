@@ -445,7 +445,22 @@ pub fn create_embed_error(
         let embed : CreateEmbed = CreateEmbed::default()
             .title("Error")
             .description(error_message)
-            .color(0xff0000);
+            .color(0xff0000)
+            .footer(CreateEmbedFooter::new("Ce message sera supprimé dans 60 secondes."));
+        CreateReply {
+            embeds: vec![embed],
+            ..Default::default()
+        }
+    }
+
+pub fn create_embed_sucess(
+    sucess_message: &str
+    ) -> CreateReply {
+        let embed : CreateEmbed = CreateEmbed::default()
+            .title("Sucess")
+            .description(sucess_message)
+            .color(0x00ff00)
+            .footer(CreateEmbedFooter::new("Ce message sera supprimé dans 60 secondes."));
         CreateReply {
             embeds: vec![embed],
             ..Default::default()

@@ -1,5 +1,5 @@
 use chrono::{Utc, NaiveDateTime};
-use crate::models::QUEUE_ID_MAP;
+use crate::models::{QUEUE_ID_MAP, Region};
 use std::collections::HashMap;
 
 /// ⚙️ **Function**: Checks if a given queue ID corresponds to a valid game mode.
@@ -131,4 +131,22 @@ pub fn determine_solo_flex(
             let flex_rank = rank_info.get(1).unwrap_or(&default_rank).clone();
             (solo_rank, flex_rank)
         }
+    }
+
+pub fn region_to_string(region: &Region)
+    -> String{
+        match region {
+            Region::NA => "na1",
+            Region::EUW => "euw1",
+            Region::EUNE => "eun1",
+            Region::KR => "kr",
+            Region::BR => "br1",
+            Region::LAN => "la1",
+            Region::LAS => "la2",
+            Region::OCE => "oc1",
+            Region::RU => "ru",
+            Region::TR => "tr1",
+            Region::JP => "jp1",
+        }
+        .to_string()
     }

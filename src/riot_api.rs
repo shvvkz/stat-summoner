@@ -61,6 +61,7 @@ pub async fn get_puuid(
 /// - `client`: An instance of the `reqwest::Client` used to send HTTP requests.
 /// - `puuid`: The player's unique PUUID (Player Unique Identifier), used to identify them across Riot's services.
 /// - `riot_api_key`: The API key used to authenticate the request with the Riot API.
+/// - `nb_match`: The number of recent matches to retrieve.
 ///
 /// # Returns:
 /// - `Result<Vec<String>, Error>`: A vector containing the IDs of the player's recent matches, or an error if the request fails.
@@ -72,7 +73,7 @@ pub async fn get_puuid(
 ///
 /// # Example:
 /// ```rust
-/// let match_ids = get_matchs_id(&client, "abcd1234-efgh5678-ijkl91011-mnop1213", riot_api_key).await?;
+/// let match_ids = get_matchs_id(&client, "abcd1234-efgh5678-ijkl91011-mnop1213", riot_api_key, 5).await?;
 /// ```
 ///
 /// The resulting `match_ids` will be a vector of strings, such as:
@@ -82,17 +83,20 @@ pub async fn get_puuid(
 pub async fn get_matchs_id(
     client: &Client,
     puuid: &str,
-    riot_api_key: &str
+    riot_api_key: &str,
+    nb_match: u32
     ) -> Result<Vec<String>, Error> {
         let matchs_url = format!(
-            "https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{}/ids?&count=5&api_key={}",
-            puuid, riot_api_key
+            "https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{}/ids?&count={}&api_key={}",
+            puuid, nb_match.to_string(),  riot_api_key
         );
 
         let response = client.get(&matchs_url).send().await?;
         let matchs_id: Vec<String> = response.json().await?;
         Ok(matchs_id)
     }
+
+
 
 /// ⚙️ **Function**: Fetches the summoner ID for a player using their PUUID.
 ///

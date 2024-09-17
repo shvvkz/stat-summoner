@@ -11,7 +11,6 @@ pub struct Data {
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 
-/// Structure représentant les données d'un utilisateur suivi dans MongoDB
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SummonerFollowedData {
     pub puuid: String,
@@ -19,14 +18,8 @@ pub struct SummonerFollowedData {
     pub name: String,
     pub tag: String,
     pub region: String,
-    pub rank_solo: String,
-    pub tier_solo: String,
-    pub lp_solo: String,
-    pub rank_flex: String,
-    pub tier_flex: String,
-    pub lp_flex: String,
-    pub last_match_id: String, // Champ rendu optionnel
-    pub time_left_follow: String,
+    pub last_match_id: String,
+    pub time_end_follow: String,
 }
 
 #[derive(Debug, poise::ChoiceParameter)]
@@ -44,7 +37,6 @@ pub enum Region {
     JP,
 }
 
-/// Modal pour entrer le nom du joueur et le tag
 #[derive(Debug, Modal)]
 #[name = "Enter your League of Legends Stats Info"]
 pub struct LolStatsModal {
