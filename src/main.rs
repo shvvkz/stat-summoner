@@ -6,6 +6,7 @@ mod commands;
 
 use models::Data;
 use poise::serenity_prelude::{self as serenity};
+use riot_api::get_matchs_id;
 use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
 use commands::lolstats::lolstats;
@@ -69,10 +70,11 @@ async fn main(
 
     // Lancer une tâche de fond pour vérifier la base de données toutes les 2 minutes
     let mongo_client_clone = mongo_client.clone();
+    let riot_api_key_clone = riot_api_key.clone();
     tokio::spawn(async move {
         loop {
             // Exécuter la vérification périodique de la base de données
-            match check_and_update_db(&mongo_client_clone).await {
+            match check_and_update_db(&mongo_client_clone, &riot_api_key_clone).await {
                 Ok(_) => (),
                 Err(e) => error!("Erreur lors de la vérification de la base de données : {:?}", e),
             }
@@ -111,7 +113,7 @@ async fn main(
 }
 
 /// Fonction de vérification et de mise à jour de la base de données
-async fn check_and_update_db(mongo_client: &Client) -> Result<(), mongodb::error::Error> {
+async fn check_and_update_db(mongo_client: &Client, riot_api_key: &str) -> Result<(), mongodb::error::Error> {
     let collection = mongo_client
         .database("stat-summoner")
         .collection::<models::SummonerFollowedData>("follower_summoner");
@@ -130,18 +132,25 @@ async fn check_and_update_db(mongo_client: &Client) -> Result<(), mongodb::error
             match result {
                 Ok(followed_summoner) => {
                     let puuid = followed_summoner.puuid;
+                    let summoner_id = followed_summoner.summoner_id;
                     let last_match_id = followed_summoner.last_match_id;
-                    println!("PUUID: {}, Dernier match ID: {}", puuid, last_match_id);
+                    let client = reqwest::Client::new();
+                    // Use riot_api_key passed as a parameter
+                    let match_id_from_riot = get_matchs_id(&client, &puuid, riot_api_key, 1).await.unwrap()[0].to_string();
+                    if last_match_id == match_id_from_riot {
+                        eprint!("pas de nouvelle partie");
+                    }
+                    else {
+                        eprint!("Nouvelle partie pour : {}", puuid);
+                    }
+                    
                 }
                 Err(e) => {
                     println!("Erreur lors de la récupération d'un document : {:?}", e);
                 }
             }
         }
-    } else {
-        println!("Aucun document dans la base de données.");
     }
 
     Ok(())
 }
-

@@ -5,6 +5,7 @@ use mongodb::bson::doc;
 use poise::Modal;
 use crate::embed::{create_embed_error, create_embed_sucess};
 use crate::utils::region_to_string;
+use chrono::{Utc, Duration};
 
 #[poise::command(slash_command)]
 pub async fn followgames(
@@ -52,7 +53,7 @@ pub async fn followgames(
     let puuid = match get_puuid(&client, &game_name_space, &modal_data.tag_line, &ctx.data().riot_api_key).await {
         Ok(puuid) => puuid,
         Err(e) => {
-            let error_message = format!("Error fetching PUUID: {}", e);
+            let error_message = format!("{}", e);
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
             return Ok(());
@@ -62,14 +63,14 @@ pub async fn followgames(
     let summoner_id = match get_summoner_id(&client, &region_str, &puuid, &ctx.data().riot_api_key).await {
         Ok(id) => id,
         Err(e) => {
-            let error_message = format!("Error fetching summoner ID: {}", e);
+            let error_message = format!("{}", e);
             let reply = ctx.send(create_embed_error(&error_message)).await?;
             schedule_message_deletion(reply, ctx).await?;
             return Ok(());
         }
     };
     let match_id = get_matchs_id(&client, &puuid, &ctx.data().riot_api_key, 1).await.unwrap()[0].to_string();
-    let time_end_follow = (chrono::Utc::now() + chrono::Duration::hours(time_followed as i64)).to_string();
+    let time_end_follow = (Utc::now() + Duration::hours(time_followed as i64)).timestamp().to_string();
     eprint!("match_id: {:?}", match_id);
     let mongo_client = &ctx.data().mongo_client;
     let collection = mongo_client
