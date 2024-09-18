@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use poise::{serenity_prelude::{self as serenity}, CreateReply};
+use poise::{serenity_prelude::{self as serenity, CreateMessage}, CreateReply};
 use serde_json::{Map, Value};
 use crate::models::*;
 use crate::riot_api::*;
@@ -324,7 +324,7 @@ fn extract_participant_stats(p: &Value) -> Value {
     })
 }
 async fn extract_match_info_advanced(p: &Value) -> Value {
-    let summoner_name = p["summonerName"].as_str().unwrap_or("Unknown");
+    let summoner_name = p["riotIdGameName"].as_str().unwrap_or("Unknown");
     let champion_name = p["championName"].as_str().unwrap_or("Unknown");
     let kills = p["kills"].as_u64().unwrap_or(0);
     let deaths = p["deaths"].as_u64().unwrap_or(0);
@@ -345,7 +345,7 @@ async fn extract_match_info_advanced(p: &Value) -> Value {
 
 /// Traite les informations d'un match pour extraire les détails des participants.
 /// Retourne un objet JSON structuré ou `None` si le mode de jeu n'est pas valide.
-fn get_match_details(match_info: &Value, summoner_id: &str) -> Option<Value> {
+pub fn get_match_details(match_info: &Value, summoner_id: &str) -> Option<Value> {
     let queue_id = match_info["info"]["queueId"].as_i64().unwrap_or(-1);
     if !is_valid_game_mode(queue_id) {
         return None;
@@ -603,3 +603,74 @@ pub async fn schedule_message_deletion(
         }
         Ok(())
     }
+pub fn create_match_embed_from_string(info_json: &Value, player_name: &str) -> String {
+    let game_result = info_json["gameResult"].as_str().unwrap_or("Unknown");
+    let game_result_emoji = if game_result == "Victory" { "🏆" } else { "❌" };
+
+    // Commencer à construire la chaîne de caractères
+    let mut content = String::new();
+
+    content.push_str(&format!("**{}** - **Résultat du Match : {} {} {} **\n\n",player_name ,game_result_emoji, game_result, game_result_emoji));
+
+    // Organiser les matchups par rôle spécifique
+    let roles_order = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
+    let mut matchups_by_role = std::collections::HashMap::new();
+
+    if let Some(matchups) = info_json["matchups"].as_array() {
+        for matchup in matchups {
+            let role = matchup["role"].as_str().unwrap_or("Unknown").to_string();
+            matchups_by_role.insert(role, matchup);
+        }
+
+        for role in &roles_order {
+            if let Some(matchup) = matchups_by_role.get(*role) {
+                let team_player = &matchup["team"];
+                let enemy_player = &matchup["enemy"];
+
+                // Emojis pour les rôles
+                let role_emoji = match *role {
+                    "TOP" => "🔼",
+                    "JUNGLE" => "🌲",
+                    "MIDDLE" => "🛣️",
+                    "BOTTOM" => "🔽",
+                    "UTILITY" => "🛡️",
+                    _ => "",
+                };
+
+                // Construire les statistiques pour le joueur de l'équipe
+                let team_stats = format!(
+                    "{} **{}** ({}) **{}/{}/{}** {} CS",
+                    role_emoji,
+                    team_player["championName"].as_str().unwrap_or("Unknown"),
+                    team_player["summonerName"].as_str().unwrap_or("Unknown"),
+                    team_player["kills"].as_u64().unwrap_or(0),
+                    team_player["deaths"].as_u64().unwrap_or(0),
+                    team_player["assists"].as_u64().unwrap_or(0),
+                    team_player["totalFarm"].as_u64().unwrap_or(0)
+                );
+
+                // Construire les statistiques pour le joueur ennemi
+                let enemy_stats = format!(
+                    "**{}** ({}) **{}/{}/{}** {} CS",
+                    enemy_player["championName"].as_str().unwrap_or("Unknown"),
+                    enemy_player["summonerName"].as_str().unwrap_or("Unknown"),
+                    enemy_player["kills"].as_u64().unwrap_or(0),
+                    enemy_player["deaths"].as_u64().unwrap_or(0),
+                    enemy_player["assists"].as_u64().unwrap_or(0),
+                    enemy_player["totalFarm"].as_u64().unwrap_or(0)
+                );
+
+                // Ajouter les informations au contenu
+                content.push_str(&format!(
+                    "{} - {}\n",
+                    team_stats,
+                    enemy_stats
+                ));
+            }
+        }
+    } else {
+        content.push_str("Aucun matchup disponible\n");
+    }
+
+    content
+}

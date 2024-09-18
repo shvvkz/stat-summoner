@@ -99,6 +99,10 @@ async fn add_user_to_db(
             return Ok(());
         }
         Ok(None) => {
+            let channel_id = ctx.channel_id().get();
+            let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0);
+            let user_id = ctx.author().id.get();
+            
             let new_followed_summoner = SummonerFollowedData {
                 puuid: puuid.clone(),
                 summoner_id: summoner_id.clone(),
@@ -107,6 +111,9 @@ async fn add_user_to_db(
                 region: region_str.to_string(),
                 last_match_id: match_id.clone(),
                 time_end_follow: time_end_follow.clone(),
+                channel_id: channel_id,
+                guild_id: guild_id,
+                user_id: user_id,
             };
             match collection.insert_one(new_followed_summoner).await {
                 Ok(_) => {

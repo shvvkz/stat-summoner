@@ -6,8 +6,10 @@ mod commands;
 
 use chrono::Utc;
 use models::Data;
-use poise::serenity_prelude::{self as serenity};
-use riot_api::get_matchs_id;
+use poise::serenity_prelude::{self as serenity, model::channel, Attachment, Cache, CreateAttachment, CreateMessage};
+use riot_api::{get_matchs_id, get_matchs_info};
+use serenity::http::Http;
+use embed::{get_match_details, create_match_embed_from_string};
 use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
 use commands::lolstats::lolstats;
@@ -17,6 +19,7 @@ use mongodb::bson::doc;
 use tokio::time::{sleep, Duration};
 use tracing::log::error;
 use futures::stream::StreamExt;
+use std::sync::Arc;
 
 /// ⚙️ **Function**: Initializes and starts the Discord bot using the Shuttle runtime and Poise framework.
 ///
@@ -62,26 +65,13 @@ async fn main(
     let mongodb_uri = secret_store
         .get("MONGODB_URI")
         .ok_or_else(|| anyhow::anyhow!("'MONGODB_URI' was not found"))?;
-
     // Initialiser MongoDB
     let mut client_options = ClientOptions::parse(&mongodb_uri).await.expect("Failed to parse MongoDB URI");
     let server_api = ServerApi::builder().version(ServerApiVersion::V1).build();
     client_options.server_api = Some(server_api);
     let mongo_client = Client::with_options(client_options).expect("Failed to create MongoDB client");
-
-    // Lancer une tâche de fond pour vérifier la base de données toutes les 2 minutes
     let mongo_client_clone = mongo_client.clone();
     let riot_api_key_clone = riot_api_key.clone();
-    tokio::spawn(async move {
-        loop {
-            // Exécuter la vérification périodique de la base de données
-            match check_and_update_db(&mongo_client_clone, &riot_api_key_clone).await {
-                Ok(_) => (),
-                Err(e) => error!("Erreur lors de la vérification de la base de données : {:?}", e),
-            }
-            sleep(Duration::from_secs(120)).await; // Attendre 2 minutes
-        }
-    });
     let dd_json = riot_api::open_dd_json().await.unwrap();
     // Configurer le framework Poise avec les commandes
     let framework = poise::Framework::builder()
@@ -109,12 +99,27 @@ async fn main(
         .framework(framework)
         .await
         .map_err(shuttle_runtime::CustomError::new)?;
+    let http = client.http.clone();
+    let cache = client.cache.clone();
 
+    // Lancer une tâche de fond pour vérifier la base de données toutes les 2 minutes
+
+    
+    tokio::spawn(async move {
+        loop {
+            // Exécuter la vérification périodique de la base de données
+            match check_and_update_db(&mongo_client_clone, &riot_api_key_clone, http.clone(), cache.clone()).await {
+                Ok(_) => (),
+                Err(e) => error!("Erreur lors de la vérification de la base de données : {:?}", e),
+            }
+            sleep(Duration::from_secs(120)).await; // Attendre 2 minutes
+        }
+    });
     Ok(client.into())
 }
 
 /// Fonction de vérification et de mise à jour de la base de données
-async fn check_and_update_db(mongo_client: &Client, riot_api_key: &str) -> Result<(), mongodb::error::Error> {
+async fn check_and_update_db(mongo_client: &Client, riot_api_key: &str, http: Arc<Http>, cache: Arc<Cache>) -> Result<(), mongodb::error::Error> {
     let collection = mongo_client
         .database("stat-summoner")
         .collection::<models::SummonerFollowedData>("follower_summoner");
@@ -146,7 +151,15 @@ async fn check_and_update_db(mongo_client: &Client, riot_api_key: &str) -> Resul
                         // Use riot_api_key passed as a parameter
                         let match_id_from_riot = get_matchs_id(&client, &puuid, riot_api_key, 1).await.unwrap()[0].to_string();
                         if last_match_id != match_id_from_riot {
+                            let match_id = match_id_from_riot.clone();
                             collection.update_one(doc! { "puuid": puuid }, doc! { "$set": { "last_match_id": match_id_from_riot } }).await?;
+                            let info = get_matchs_info(&client, &match_id, riot_api_key).await.unwrap();
+                            let info_json = get_match_details(&info, &summoner_id).unwrap();
+                            let channel_id = serenity::model::id::ChannelId::new(followed_summoner.channel_id);
+                            let guild_id = serenity::model::id::GuildId::new(followed_summoner.guild_id);
+                            let message = create_match_embed_from_string(&info_json, &followed_summoner.name);
+                            channel_id.say(&http, message).await.unwrap();
+                                                    
                         }
                     }
                 }
