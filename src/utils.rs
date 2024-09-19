@@ -1,5 +1,6 @@
 use chrono::{Utc, NaiveDateTime};
-use crate::models::{QUEUE_ID_MAP, Region};
+use crate::models::constants::QUEUE_ID_MAP;
+use crate::models::region::Region;
 use std::collections::HashMap;
 
 /// ⚙️ **Function**: Checks if a given queue ID corresponds to a valid game mode.

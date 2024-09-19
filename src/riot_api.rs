@@ -1,7 +1,7 @@
 use reqwest::Client;
 use serde_json::Value;
 use std::collections::HashMap;
-use crate::models::Error;
+use crate::models::error::Error;
 
 /// ⚙️ **Function**: Fetches the player's PUUID (Player Unique Identifier) from the Riot API.
 ///
@@ -353,7 +353,7 @@ pub async fn get_matchs_info(
             "https://europe.api.riotgames.com/lol/match/v5/matches/{}?api_key={}",
             match_id, riot_api_key
         );
-        eprint!("Fetching match data from {}...", matchs_info_url);
+        eprint!("Fetching match data from {}...\n", matchs_info_url);
         let response = client.get(&matchs_info_url).send().await?;
         let matchs_info: Value = response.json().await?;
         Ok(matchs_info)

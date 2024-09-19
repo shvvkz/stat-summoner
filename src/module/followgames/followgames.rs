@@ -1,9 +1,13 @@
+use crate::module::followgames::utils::add_user_to_db;
 use crate::riot_api::{get_matchs_id, get_puuid, get_summoner_id};
 use crate::embed::schedule_message_deletion;
-use crate::models::{Data, Error, FollowGamesModal, Region, SummonerFollowedData};
-use mongodb::bson::doc;
+use crate::models::data::Data;
+use crate::models::error::Error;
+use crate::models::modal::FollowGamesModal;
+use crate::models::region::Region;
+use crate::models::data::SummonerFollowedData;
 use poise::Modal;
-use crate::embed::{create_embed_error, create_embed_sucess};
+use crate::embed::create_embed_error;
 use crate::utils::region_to_string;
 use chrono::{Utc, Duration};
 
@@ -79,62 +83,4 @@ pub async fn followgames(
 
     add_user_to_db(collection, ctx, modal_data, region_str, puuid, summoner_id, match_id, time_end_follow).await?;
     Ok(())
-}
-
-async fn add_user_to_db(
-    collection: mongodb::Collection<SummonerFollowedData>,
-    ctx: poise::ApplicationContext<'_, Data, Error>,
-    modal_data: FollowGamesModal,
-    region_str: String,
-    puuid: String,
-    summoner_id: String,
-    match_id: String,
-    time_end_follow: String,
-    ) -> Result<(), Error> {
-    match collection.find_one(doc! { "puuid": puuid.clone() }).await {
-        Ok(Some(_followed_summoner)) => {
-            let error_message = "Error user already followed.";
-            let reply = ctx.send(create_embed_error(&error_message)).await?;
-            schedule_message_deletion(reply, ctx).await?;
-            return Ok(());
-        }
-        Ok(None) => {
-            let channel_id = ctx.channel_id().get();
-            let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0);
-            let user_id = ctx.author().id.get();
-            
-            let new_followed_summoner = SummonerFollowedData {
-                puuid: puuid.clone(),
-                summoner_id: summoner_id.clone(),
-                name: modal_data.game_name.clone(),
-                tag: modal_data.tag_line.clone(),
-                region: region_str.to_string(),
-                last_match_id: match_id.clone(),
-                time_end_follow: time_end_follow.clone(),
-                channel_id: channel_id,
-                guild_id: guild_id,
-                user_id: user_id,
-            };
-            match collection.insert_one(new_followed_summoner).await {
-                Ok(_) => {
-                    let sucess_message = "User has been followed.";
-                    let reply = ctx.send(create_embed_sucess(&sucess_message)).await?;
-                    schedule_message_deletion(reply, ctx).await?;
-                    return Ok(());
-                }
-                Err(e) => {
-                    let error_message = format!("Error inserting user to MongoDB: {}", e);
-                    let reply = ctx.send(create_embed_error(&error_message)).await?;
-                    schedule_message_deletion(reply, ctx).await?;
-                    return Ok(());
-                }
-            }
-        }
-        Err(e) => {
-            let error_message = format!("Error collecting informations from MongoDB: {}", e);
-            let reply = ctx.send(create_embed_error(&error_message)).await?;
-            schedule_message_deletion(reply, ctx).await?;
-            return Ok(());
-        }
-    }
 }

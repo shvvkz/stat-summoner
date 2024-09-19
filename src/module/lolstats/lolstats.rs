@@ -1,9 +1,13 @@
 use poise::Modal;
 use reqwest::Client;
 use std::collections::HashMap;
-use crate::models::{Data, Error, LolStatsModal, Region};
+use crate::models::data::Data;
+use crate::models::error::Error;
+use crate::models::modal::LolStatsModal;
+use crate::models::region::Region;
 use crate::riot_api::{get_puuid, get_summoner_id, get_rank_info, get_champions, get_matchs_id};
-use crate::embed::{create_and_send_embed, create_embed_error, schedule_message_deletion};
+use crate::module::lolstats::utils::create_and_send_embed_lolstats;
+use crate::embed::{create_embed_error, schedule_message_deletion};
 use crate::utils::{determine_solo_flex, region_to_string};
 use futures::join;
 
@@ -135,7 +139,7 @@ pub async fn lolstats(
 
         let (solo_rank, flex_rank) = determine_solo_flex(&rank_info, &default_rank);
 
-        let reply = create_and_send_embed(&modal_data, summoner_id, &solo_rank, &flex_rank, champions, match_ids, &ctx).await;
+        let reply = create_and_send_embed_lolstats(&modal_data, summoner_id, &solo_rank, &flex_rank, champions, match_ids, &ctx).await;
         let sent_message = ctx.send(reply).await?;
         if let Err(e) = schedule_message_deletion(sent_message, ctx).await {
             eprintln!("Failed to schedule message deletion: {}", e);

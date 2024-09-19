@@ -2,24 +2,19 @@ mod riot_api;
 mod models;
 mod embed;
 mod utils;
-mod commands;
+mod module;
 
-use chrono::Utc;
-use models::Data;
-use poise::serenity_prelude::{self as serenity, model::channel, Attachment, Cache, CreateAttachment, CreateMessage};
-use riot_api::{get_matchs_id, get_matchs_info};
-use serenity::http::Http;
-use embed::{get_match_details, create_match_embed_from_string};
+use models::data::Data;
+use poise::serenity_prelude::{self as serenity};
 use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
-use commands::lolstats::lolstats;
-use commands::followgames::followgames;
+use module::lolstats::lolstats::lolstats;
+use module::followgames::followgames::followgames;
 use mongodb::{Client, options::{ClientOptions, ServerApi, ServerApiVersion}};
 use mongodb::bson::doc;
 use tokio::time::{sleep, Duration};
 use tracing::log::error;
-use futures::stream::StreamExt;
-use std::sync::Arc;
+use module::loop_module::loop_module::check_and_update_db;
 
 /// ⚙️ **Function**: Initializes and starts the Discord bot using the Shuttle runtime and Poise framework.
 ///
@@ -93,22 +88,15 @@ async fn main(
             })
         })
         .build();
-
-    // Créer le client Discord avec le token et les intents nécessaires
     let client = serenity::ClientBuilder::new(discord_token, serenity::GatewayIntents::non_privileged())
         .framework(framework)
         .await
         .map_err(shuttle_runtime::CustomError::new)?;
     let http = client.http.clone();
-    let cache = client.cache.clone();
-
-    // Lancer une tâche de fond pour vérifier la base de données toutes les 2 minutes
-
-    
     tokio::spawn(async move {
         loop {
             // Exécuter la vérification périodique de la base de données
-            match check_and_update_db(&mongo_client_clone, &riot_api_key_clone, http.clone(), cache.clone()).await {
+            match check_and_update_db(&mongo_client_clone, &riot_api_key_clone, http.clone(), ).await {
                 Ok(_) => (),
                 Err(e) => error!("Erreur lors de la vérification de la base de données : {:?}", e),
             }
@@ -118,57 +106,3 @@ async fn main(
     Ok(client.into())
 }
 
-/// Fonction de vérification et de mise à jour de la base de données
-async fn check_and_update_db(mongo_client: &Client, riot_api_key: &str, http: Arc<Http>, cache: Arc<Cache>) -> Result<(), mongodb::error::Error> {
-    let collection = mongo_client
-        .database("stat-summoner")
-        .collection::<models::SummonerFollowedData>("follower_summoner");
-
-    // Compter le nombre de documents dans la collection
-    let count = collection.estimated_document_count().await?;
-
-    if count > 0 {
-        println!("La base de données contient {} documents.", count);
-
-        // Récupérer tous les documents dans la collection
-        let mut cursor = collection.find(doc! {}).await?;
-
-        // Itérer sur chaque document et afficher `puuid` et `last_match`
-        while let Some(result) = cursor.next().await {
-            match result {
-                Ok(followed_summoner) => {
-                    let time_end_follow = followed_summoner.time_end_follow;
-                    let timestamp = Utc::now().timestamp();
-                    if timestamp > time_end_follow.parse::<i64>().unwrap() {
-                        eprint!("Suppression de {}", followed_summoner.puuid);
-                        collection.delete_one(doc! { "puuid": followed_summoner.puuid }).await?;
-                    }
-                    else{
-                        let puuid = followed_summoner.puuid;
-                        let summoner_id = followed_summoner.summoner_id;
-                        let last_match_id = followed_summoner.last_match_id;
-                        let client = reqwest::Client::new();
-                        // Use riot_api_key passed as a parameter
-                        let match_id_from_riot = get_matchs_id(&client, &puuid, riot_api_key, 1).await.unwrap()[0].to_string();
-                        if last_match_id != match_id_from_riot {
-                            let match_id = match_id_from_riot.clone();
-                            collection.update_one(doc! { "puuid": puuid }, doc! { "$set": { "last_match_id": match_id_from_riot } }).await?;
-                            let info = get_matchs_info(&client, &match_id, riot_api_key).await.unwrap();
-                            let info_json = get_match_details(&info, &summoner_id).unwrap();
-                            let channel_id = serenity::model::id::ChannelId::new(followed_summoner.channel_id);
-                            let guild_id = serenity::model::id::GuildId::new(followed_summoner.guild_id);
-                            let message = create_match_embed_from_string(&info_json, &followed_summoner.name);
-                            channel_id.say(&http, message).await.unwrap();
-                                                    
-                        }
-                    }
-                }
-                Err(e) => {
-                    println!("Erreur lors de la récupération d'un document : {:?}", e);
-                }
-            }
-        }
-    }
-
-    Ok(())
-}
