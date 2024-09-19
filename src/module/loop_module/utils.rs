@@ -231,7 +231,7 @@ fn extract_participant_stats(p: &Value) -> Value {
     let total_minions_killed = p["totalMinionsKilled"].as_u64().unwrap_or(0);
     let neutral_minions_killed = p["neutralMinionsKilled"].as_u64().unwrap_or(0);
     let total_farm = total_minions_killed + neutral_minions_killed;
-    let gold_per_minute = p["challenges"]["goldPerMinute"].as_u64().unwrap_or(0);
+    let gold_per_minute = p["challenges"].get("goldPerMinute").and_then(|v| v.as_u64()).unwrap_or(0);
     let gold_earned = p["goldEarned"].as_u64().unwrap_or(0);
     let vision_score = p["visionScore"].as_u64().unwrap_or(0);
 
