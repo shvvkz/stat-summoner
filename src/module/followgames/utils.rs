@@ -4,6 +4,7 @@ use crate::models::data::{Data, SummonerFollowedData};
 use crate::models::error::Error;
 use crate::models::modal::FollowGamesModal;
 use mongodb::bson::doc;
+use poise::cooldown;
 use crate::embed::{create_embed_error, create_embed_sucess};
 
 /// ⚙️ **Function**: Adds a summoner to the database for game follow-up if they are not already being followed.
@@ -51,41 +52,58 @@ pub async fn check_and_add_in_db(
             let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0);
             // si guild_id est égale au guild_id dans le summoner followed data, on envoie un message d'erreur sinon on ajoute a la bd
             if _followed_summoner.guild_id == guild_id {
-                let error_message = "Error User already followed.";
-                let reply = ctx.send(create_embed_error(&error_message)).await?;
-                schedule_message_deletion(reply, ctx).await?;
-                return Ok(());
+                match collection
+                .update_one(
+                    doc! { "puuid": puuid.clone() },
+                    doc! { "$set": { "time_end_follow": time_end_follow.clone() } }
+                )
+                .await{
+                    Ok(_) => {
+                        let success_message = "Success, tracking time has been updated.";
+                        let reply = ctx.send(create_embed_sucess(&success_message)).await?;
+                        schedule_message_deletion(reply, ctx).await?;
+                        return Ok(());
+                    }
+                    Err(_) => {
+                        let error_message = "Error, failed to update tracking time.";
+                        let reply = ctx.send(create_embed_error(&error_message)).await?;
+                        schedule_message_deletion(reply, ctx).await?;
+                        return Ok(());
+                    }
+                }
             }
             else{
-                let _= add_user_to_db(collection, ctx, puuid, summoner_id, modal_data, region_str, match_id, time_end_follow);
-                return Ok(())
+                let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0);
+                let channel_id = ctx.channel_id().get();
+                let new_followed_summoner = SummonerFollowedData {
+                    puuid: puuid.clone(),
+                    summoner_id: summoner_id.clone(),
+                    name: modal_data.game_name.clone(),
+                    tag: modal_data.tag_line.clone(),
+                    region: region_str.to_string(),
+                    last_match_id: match_id.clone(),
+                    time_end_follow: time_end_follow.clone(),
+                    channel_id: channel_id,
+                    guild_id: guild_id
+                };
+                match collection.insert_one(new_followed_summoner).await {
+                    Ok(_) => {
+                        let sucess_message = "User has been followed.";
+                        let reply = ctx.send(create_embed_sucess(&sucess_message)).await?;
+                        schedule_message_deletion(reply, ctx).await?;
+                        return Ok(());
+                    }
+                    Err(e) => {
+                        let error_message = format!("Error inserting user to MongoDB: {}", e);
+                        let reply = ctx.send(create_embed_error(&error_message)).await?;
+                        schedule_message_deletion(reply, ctx).await?;
+                        return Ok(());
+                    }
+                }
             }
         }
         Ok(None) => {
-            let _ = add_user_to_db(collection, ctx, puuid, summoner_id, modal_data, region_str, match_id, time_end_follow);
-            return Ok(())
-        }
-        Err(e) => {
-            let error_message = format!("Error collecting informations from MongoDB: {}", e);
-            let reply = ctx.send(create_embed_error(&error_message)).await?;
-            schedule_message_deletion(reply, ctx).await?;
-            return Ok(());
-        }
-    }
-}
-
-
-async fn add_user_to_db(
-    collection: mongodb::Collection<SummonerFollowedData>,
-    ctx: poise::ApplicationContext<'_, Data, Error>,
-    puuid: String,
-    summoner_id: String,
-    modal_data: FollowGamesModal,
-    region_str: String,
-    match_id: String,
-    time_end_follow: String
-    ) -> Result<(), Error> {
-        let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0);
+            let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0);
             let channel_id = ctx.channel_id().get();
             let new_followed_summoner = SummonerFollowedData {
                 puuid: puuid.clone(),
@@ -113,3 +131,12 @@ async fn add_user_to_db(
                 }
             }
         }
+        Err(e) => {
+            let error_message = format!("Error collecting informations from MongoDB: {}", e);
+            let reply = ctx.send(create_embed_error(&error_message)).await?;
+            schedule_message_deletion(reply, ctx).await?;
+            return Ok(());
+        }
+    }
+}
+
