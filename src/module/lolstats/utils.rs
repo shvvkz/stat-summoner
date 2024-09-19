@@ -7,7 +7,7 @@ use crate::models::modal::LolStatsModal;
 use crate::models::error::Error;
 use crate::models::constants::QUEUE_ID_MAP;
 use crate::riot_api::get_matchs_info;
-use crate::utils::{time_since_game_ended, is_valid_game_mode};
+use crate::utils::{is_valid_game_mode, seconds_to_time, time_since_game_ended};
 use crate::embed::create_embed;
 
 /// ⚙️ **Function**: Fetches data and creates an embed displaying League of Legends player stats and match details.
@@ -280,22 +280,14 @@ async fn extract_match_info(
                     let game_duration = info["info"]["gameDuration"].as_u64().unwrap_or(0);
                     let game_end_timestamp = info["info"]["gameEndTimestamp"].as_u64().unwrap_or(0);
                     let time_since_game_ended = time_since_game_ended(game_end_timestamp);
-
-                    let game_duration_minutes = game_duration / 60;
-                    let game_duration_seconds = game_duration % 60;
-                    let game_duration_seconds_str: String;
-                    if game_duration_seconds < 10 {
-                        game_duration_seconds_str = format!("0{}", game_duration_seconds)
-                    } else {
-                        game_duration_seconds_str = game_duration_seconds.to_string()
-                    };
+                    let (game_duration_minutes, game_duration_seconds) = seconds_to_time(game_duration);
                     let game_type = QUEUE_ID_MAP.iter().find(|(id, _)| *id == queue_id).unwrap().1;
                     match_details.push(serde_json::json!({
                         "champion_name": champion_name,
                         "K/D/A": format!("{}/{}/{}", kills, deaths, assists),
                         "Farm": total_farm,
                         "Result": game_result,
-                        "Duration": format!("{}:{}", game_duration_minutes, game_duration_seconds_str),
+                        "Duration": format!("{}:{}", game_duration_minutes, game_duration_seconds),
                         "time_elapsed": time_since_game_ended,
                         "game_type": game_type
                     }));

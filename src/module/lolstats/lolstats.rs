@@ -11,7 +11,7 @@ use crate::embed::{create_embed_error, schedule_message_deletion};
 use crate::utils::{determine_solo_flex, region_to_string};
 use futures::join;
 
-/// ⚙️ Fetches and displays LoL player stats based on user input.
+/// Fetches and displays LoL player stats based on user input.
 ///
 /// This Discord command allows a user to input their League of Legends in-game name and tag, then fetches
 /// the player's Solo/Duo and Flex rank, top champions, and recent match details from the Riot API.
