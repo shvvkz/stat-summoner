@@ -17,5 +17,5 @@ pub struct SummonerFollowedData {
     pub last_match_id: String,
     pub time_end_follow: String,
     pub channel_id: u64,
-    pub guild_id: u64,
+    pub guild_id: String,
 }

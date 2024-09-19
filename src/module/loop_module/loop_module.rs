@@ -198,7 +198,7 @@ async fn delete_follower(
     ) -> Result<(), mongodb::error::Error> {
         eprintln!("Suppression de {}", followed_summoner.puuid);
         collection
-            .delete_one(doc! { "puuid": &followed_summoner.puuid })
+            .delete_one(doc! { "puuid": &followed_summoner.puuid, "guild_id": &followed_summoner.guild_id })
             .await?;
         Ok(())
     }
@@ -238,6 +238,7 @@ async fn update_follower_if_new_match(
         let puuid = &followed_summoner.puuid;
         let summoner_id = &followed_summoner.summoner_id;
         let last_match_id = &followed_summoner.last_match_id;
+        let guild_id = &followed_summoner.guild_id;
         let client = reqwest::Client::new();
 
         let match_id_from_riot = get_latest_match_id(&client, puuid, riot_api_key).await?;
@@ -245,7 +246,10 @@ async fn update_follower_if_new_match(
         if last_match_id != &match_id_from_riot {
             collection
                 .update_one(
-                    doc! { "puuid": puuid },
+                    doc! {
+                        "puuid": puuid,
+                        "guild_id": guild_id
+                        },
                     doc! { "$set": { "last_match_id": &match_id_from_riot } },
                 )
                 .await?;

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use chrono::Utc;
+use chrono::Local;
 use poise::serenity_prelude::CreateEmbed;
 use serde_json::Value;
 use crate::utils::*;
@@ -34,6 +34,8 @@ use crate::utils::*;
 /// - It generates JSON-formatted role matchups comparing stats between the summoner's team and their opponents for each role.
 pub fn get_match_details(match_info: &Value, summoner_id: &str) -> Option<Value> {
     let queue_id = match_info["info"]["queueId"].as_i64().unwrap_or(-1);
+    let (game_duration_minutes, game_duration_secondes) = seconds_to_time(match_info["gameDuration"].as_u64().unwrap_or(0));
+    let game_duration_string = format!("{}:{}", game_duration_minutes, game_duration_secondes);
     if !is_valid_game_mode(queue_id) {
         return None;
     }
@@ -83,6 +85,7 @@ pub fn get_match_details(match_info: &Value, summoner_id: &str) -> Option<Value>
 
     Some(serde_json::json!({
         "gameResult": game_result,
+        "gameDuration": game_duration_string,
         "matchups": matchups
     }))
 }
@@ -114,16 +117,16 @@ pub fn get_match_details(match_info: &Value, summoner_id: &str) -> Option<Value>
 /// - Emojis and icons are used to visually differentiate between roles, adding clarity to the embed presentation.
 pub fn create_embed_loop(info_json: &Value, player_name: &str) -> CreateEmbed {
     let game_result = info_json["gameResult"].as_str().unwrap_or("Unknown");
-    let (game_duration_minutes, game_duration_secondes) = seconds_to_time(info_json["gameDuration"].as_u64().unwrap_or(0));
+    let game_duration= info_json["gameDuration"].as_str().unwrap_or("00:00");
     let game_result_emoji = if game_result == "Victory" { "🏆" } else { "❌" };
     let color = if game_result == "Victory" { 0x00ff00 } else { 0xff0000 };
-    let now = Utc::now();
+    let now = Local::now();
     let formatted_time = now.format("%Y/%m/%d %H:%M").to_string();
 
     // Construct the embed title
     let title = format!(
-        "**{}** - **Game Result : {} {} - {} ({}:{})**",
-        player_name, game_result, game_result_emoji, formatted_time, game_duration_minutes, game_duration_secondes
+        "**{}** - **Game Result : {} {} - {} ({})**",
+        player_name, game_result, game_result_emoji, formatted_time, game_duration
     );
 
     let roles_order = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];

@@ -4,7 +4,6 @@ use crate::models::data::{Data, SummonerFollowedData};
 use crate::models::error::Error;
 use crate::models::modal::FollowGamesModal;
 use mongodb::bson::doc;
-use poise::cooldown;
 use crate::embed::{create_embed_error, create_embed_sucess};
 
 /// ⚙️ **Function**: Adds a summoner to the database for game follow-up if they are not already being followed.
@@ -49,17 +48,16 @@ pub async fn check_and_add_in_db(
     ) -> Result<(), Error> {
     match collection.find_one(doc! { "puuid": puuid.clone() }).await {
         Ok(Some(_followed_summoner)) => {
-            let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0);
-            // si guild_id est égale au guild_id dans le summoner followed data, on envoie un message d'erreur sinon on ajoute a la bd
+            let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0).to_string();
             if _followed_summoner.guild_id == guild_id {
                 match collection
                 .update_one(
-                    doc! { "puuid": puuid.clone() },
+                    doc! { "puuid": puuid.clone(), "guild_id": guild_id },
                     doc! { "$set": { "time_end_follow": time_end_follow.clone() } }
                 )
                 .await{
                     Ok(_) => {
-                        let success_message = "Success, tracking time has been updated.";
+                        let success_message = "tracking time has been updated.";
                         let reply = ctx.send(create_embed_sucess(&success_message)).await?;
                         schedule_message_deletion(reply, ctx).await?;
                         return Ok(());
@@ -73,7 +71,7 @@ pub async fn check_and_add_in_db(
                 }
             }
             else{
-                let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0);
+                let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0).to_string();
                 let channel_id = ctx.channel_id().get();
                 let new_followed_summoner = SummonerFollowedData {
                     puuid: puuid.clone(),
@@ -103,7 +101,7 @@ pub async fn check_and_add_in_db(
             }
         }
         Ok(None) => {
-            let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0);
+            let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0).to_string();
             let channel_id = ctx.channel_id().get();
             let new_followed_summoner = SummonerFollowedData {
                 puuid: puuid.clone(),
