@@ -1,8 +1,7 @@
 use reqwest::Client;
 use serde_json::Value;
 use std::collections::HashMap;
-use crate::models::Error;
-use tracing::log::error;
+use crate::models::error::Error;
 
 /// ⚙️ **Function**: Fetches the player's PUUID (Player Unique Identifier) from the Riot API.
 ///
@@ -47,7 +46,7 @@ pub async fn get_puuid(
         let puuid = puuid_json.get("puuid").and_then(Value::as_str).unwrap_or("").to_string();
 
         if puuid.is_empty() {
-            Err("This player doesn't not exist, check the region, game name and tag line you wrote.".into())
+            Err("The player could not be found. Please verify that the region, game name, and tag line you provided are correct, and try again.".into())
         } else {
             Ok(puuid)
         }
@@ -62,6 +61,7 @@ pub async fn get_puuid(
 /// - `client`: An instance of the `reqwest::Client` used to send HTTP requests.
 /// - `puuid`: The player's unique PUUID (Player Unique Identifier), used to identify them across Riot's services.
 /// - `riot_api_key`: The API key used to authenticate the request with the Riot API.
+/// - `nb_match`: The number of recent matches to retrieve.
 ///
 /// # Returns:
 /// - `Result<Vec<String>, Error>`: A vector containing the IDs of the player's recent matches, or an error if the request fails.
@@ -73,7 +73,7 @@ pub async fn get_puuid(
 ///
 /// # Example:
 /// ```rust
-/// let match_ids = get_matchs_id(&client, "abcd1234-efgh5678-ijkl91011-mnop1213", riot_api_key).await?;
+/// let match_ids = get_matchs_id(&client, "abcd1234-efgh5678-ijkl91011-mnop1213", riot_api_key, 5).await?;
 /// ```
 ///
 /// The resulting `match_ids` will be a vector of strings, such as:
@@ -83,17 +83,20 @@ pub async fn get_puuid(
 pub async fn get_matchs_id(
     client: &Client,
     puuid: &str,
-    riot_api_key: &str
+    riot_api_key: &str,
+    nb_match: u32
     ) -> Result<Vec<String>, Error> {
         let matchs_url = format!(
-            "https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{}/ids?&count=5&api_key={}",
-            puuid, riot_api_key
+            "https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{}/ids?&count={}&api_key={}",
+            puuid, nb_match.to_string(),  riot_api_key
         );
 
         let response = client.get(&matchs_url).send().await?;
         let matchs_id: Vec<String> = response.json().await?;
         Ok(matchs_id)
     }
+
+
 
 /// ⚙️ **Function**: Fetches the summoner ID for a player using their PUUID.
 ///
@@ -138,8 +141,7 @@ pub async fn get_summoner_id(
         let summoner_json: Value = response.json().await?;
         let summoner_id = summoner_json.get("id").and_then(Value::as_str).unwrap_or("").to_string();
         if summoner_id.is_empty() {
-            error!("Error retrieving summoner ID for PUUID: {}", puuid); // Log error
-            Err("Error retrieving summoner ID, check the region, game name and tag line you wrote.".into())
+            Err("Error retrieving summoner ID. Please verify that the region, game name, and tag line you provided are correct, and try again.".into())
         } else {
             Ok(summoner_id)
         }
@@ -292,7 +294,7 @@ pub async fn get_champions(
 /// ```
 pub async fn open_dd_json(
     ) -> Result<Value, Error> {
-        let dd_json = reqwest::get("https://ddragon.leagueoflegends.com/cdn/14.17.1/data/fr_FR/champion.json").await?.json().await?;
+        let dd_json = reqwest::get("https://ddragon.leagueoflegends.com/cdn/14.18.1/data/fr_FR/champion.json").await?.json().await?;
         Ok(dd_json)
     }
 
@@ -351,7 +353,9 @@ pub async fn get_matchs_info(
             "https://europe.api.riotgames.com/lol/match/v5/matches/{}?api_key={}",
             match_id, riot_api_key
         );
+        eprint!("Fetching match data from {}...\n", matchs_info_url);
         let response = client.get(&matchs_info_url).send().await?;
         let matchs_info: Value = response.json().await?;
         Ok(matchs_info)
     }
+

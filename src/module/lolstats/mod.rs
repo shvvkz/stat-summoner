@@ -27,4 +27,4 @@
 ///
 /// As more commands are added, they will be included here and imported into the main bot setup.
 pub mod lolstats;
-pub mod followgames;
+pub mod utils;
