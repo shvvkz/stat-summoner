@@ -1,8 +1,8 @@
 use std::collections::HashMap;
-use chrono::Local;
 use poise::serenity_prelude::CreateEmbed;
 use serde_json::Value;
 use crate::utils::*;
+
 
 
 /// ⚙️ **Function**: Extracts relevant match details for a given summoner from the match information.
@@ -34,7 +34,7 @@ use crate::utils::*;
 /// - It generates JSON-formatted role matchups comparing stats between the summoner's team and their opponents for each role.
 pub fn get_match_details(match_info: &Value, summoner_id: &str) -> Option<Value> {
     let queue_id = match_info["info"]["queueId"].as_i64().unwrap_or(-1);
-    let (game_duration_minutes, game_duration_secondes) = seconds_to_time(match_info["gameDuration"].as_u64().unwrap_or(0));
+    let (game_duration_minutes, game_duration_secondes) = seconds_to_time(match_info["info"]["gameDuration"].as_u64().unwrap_or(0));
     let game_duration_string = format!("{}:{}", game_duration_minutes, game_duration_secondes);
     if !is_valid_game_mode(queue_id) {
         return None;
@@ -119,14 +119,12 @@ pub fn create_embed_loop(info_json: &Value, player_name: &str) -> CreateEmbed {
     let game_result = info_json["gameResult"].as_str().unwrap_or("Unknown");
     let game_duration= info_json["gameDuration"].as_str().unwrap_or("00:00");
     let game_result_emoji = if game_result == "Victory" { "🏆" } else { "❌" };
-    let color = if game_result == "Victory" { 0x00ff00 } else { 0xff0000 };
-    let now = Local::now();
-    let formatted_time = now.format("%Y/%m/%d %H:%M").to_string();
+    let color: i32 = if game_result == "Victory" { 0x00ff00 } else { 0xff0000 };
 
     // Construct the embed title
     let title = format!(
-        "**{}** - **Game Result : {} {} - {} ({})**",
-        player_name, game_result, game_result_emoji, formatted_time, game_duration
+        "**{}** - **Game Result : {} {} - {} **",
+        player_name, game_result, game_result_emoji, game_duration
     );
 
     let roles_order = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
@@ -158,7 +156,7 @@ pub fn create_embed_loop(info_json: &Value, player_name: &str) -> CreateEmbed {
             // Team player stats
             let team_stats = format!(
 
-                "**{}** ({})\nK/D/A: **{}/{}/{}** | CS: **{}** | Gold: {} ({} g/m)",
+                "**{}** ({})\nK/D/A: **{}/{}/{}** | CS: **{}** | Gold: {} | Vision: {}",
                 team_player["summonerName"].as_str().unwrap_or("Unknown"),
                 team_player["championName"].as_str().unwrap_or("Unknown"),
                 team_player["kills"].as_u64().unwrap_or(0),
@@ -166,12 +164,12 @@ pub fn create_embed_loop(info_json: &Value, player_name: &str) -> CreateEmbed {
                 team_player["assists"].as_u64().unwrap_or(0),
                 team_player["totalFarm"].as_u64().unwrap_or(0),
                 format_gold_k(team_player["goldEarned"].as_u64().unwrap_or(0)),
-                team_player["goldPerMinute"].as_u64().unwrap_or(0)
+                team_player["visionScore"].as_u64().unwrap_or(0)
             );
 
             // Enemy player stats
             let enemy_stats = format!(
-                "**{}** ({})\nK/D/A: **{}/{}/{}** | CS: **{}** | Gold: {} ({} g/m)",
+                "**{}** ({})\nK/D/A: **{}/{}/{}** | CS: **{}** | Gold: {} | Vision: {}",
                 enemy_player["summonerName"].as_str().unwrap_or("Unknown"),
                 enemy_player["championName"].as_str().unwrap_or("Unknown"),
                 enemy_player["kills"].as_u64().unwrap_or(0),
@@ -179,7 +177,7 @@ pub fn create_embed_loop(info_json: &Value, player_name: &str) -> CreateEmbed {
                 enemy_player["assists"].as_u64().unwrap_or(0),
                 enemy_player["totalFarm"].as_u64().unwrap_or(0),
                 format_gold_k(enemy_player["goldEarned"].as_u64().unwrap_or(0)),
-                enemy_player["goldPerMinute"].as_u64().unwrap_or(0)
+                enemy_player["visionScore"].as_u64().unwrap_or(0)
             );
 
             // Combine team and enemy stats
@@ -231,7 +229,6 @@ fn extract_participant_stats(p: &Value) -> Value {
     let total_minions_killed = p["totalMinionsKilled"].as_u64().unwrap_or(0);
     let neutral_minions_killed = p["neutralMinionsKilled"].as_u64().unwrap_or(0);
     let total_farm = total_minions_killed + neutral_minions_killed;
-    let gold_per_minute = p["challenges"].get("goldPerMinute").and_then(|v| v.as_u64()).unwrap_or(0);
     let gold_earned = p["goldEarned"].as_u64().unwrap_or(0);
     let vision_score = p["visionScore"].as_u64().unwrap_or(0);
 
@@ -243,7 +240,6 @@ fn extract_participant_stats(p: &Value) -> Value {
         "assists": assists,
         "totalFarm": total_farm,
         "goldEarned": gold_earned,
-        "goldPerMinute": gold_per_minute,
         "visionScore": vision_score
     })
 }

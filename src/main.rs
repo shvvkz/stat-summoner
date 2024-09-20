@@ -10,6 +10,7 @@ use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
 use module::lolstats::lolstats::lolstats;
 use module::followgames::followgames::followgames;
+use module::whoisfollowed::whoisfollowed::whoisfollowed;
 use mongodb::{Client, options::{ClientOptions, ServerApi, ServerApiVersion}};
 use mongodb::bson::doc;
 use tokio::time::{sleep, Duration};
@@ -71,7 +72,7 @@ async fn main(
         // Configurer le framework Poise avec les commandes
         let framework = poise::Framework::builder()
             .options(poise::FrameworkOptions {
-                commands: vec![lolstats(), followgames()],
+                commands: vec![lolstats(), followgames(), whoisfollowed()],
                 ..Default::default()
             })
             .setup(move |_ctx, _ready, _framework| {

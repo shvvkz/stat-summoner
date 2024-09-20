@@ -358,3 +358,4 @@ pub async fn get_matchs_info(
         let matchs_info: Value = response.json().await?;
         Ok(matchs_info)
     }
+
