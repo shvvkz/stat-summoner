@@ -355,11 +355,14 @@
 <a href="#355" id="355">355</a>
 <a href="#356" id="356">356</a>
 <a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>reqwest::Client;
 <span class="kw">use </span>serde_json::Value;
 <span class="kw">use </span>std::collections::HashMap;
-<span class="kw">use </span><span class="kw">crate</span>::models::Error;
-<span class="kw">use </span>tracing::log::error;
+<span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
 
 <span class="doccomment">/// ⚙️ **Function**: Fetches the player's PUUID (Player Unique Identifier) from the Riot API.
 ///
@@ -404,7 +407,7 @@
         <span class="kw">let </span>puuid = puuid_json.get(<span class="string">"puuid"</span>).and_then(Value::as_str).unwrap_or(<span class="string">""</span>).to_string();
 
         <span class="kw">if </span>puuid.is_empty() {
-            <span class="prelude-val">Err</span>(<span class="string">"This player doesn't not exist, check the region, game name and tag line you wrote."</span>.into())
+            <span class="prelude-val">Err</span>(<span class="string">"The player could not be found. Please verify that the region, game name, and tag line you provided are correct, and try again."</span>.into())
         } <span class="kw">else </span>{
             <span class="prelude-val">Ok</span>(puuid)
         }
@@ -419,6 +422,7 @@
 /// - `client`: An instance of the `reqwest::Client` used to send HTTP requests.
 /// - `puuid`: The player's unique PUUID (Player Unique Identifier), used to identify them across Riot's services.
 /// - `riot_api_key`: The API key used to authenticate the request with the Riot API.
+/// - `nb_match`: The number of recent matches to retrieve.
 ///
 /// # Returns:
 /// - `Result&lt;Vec&lt;String&gt;, Error&gt;`: A vector containing the IDs of the player's recent matches, or an error if the request fails.
@@ -430,7 +434,7 @@
 ///
 /// # Example:
 /// ```rust
-/// let match_ids = get_matchs_id(&amp;client, "abcd1234-efgh5678-ijkl91011-mnop1213", riot_api_key).await?;
+/// let match_ids = get_matchs_id(&amp;client, "abcd1234-efgh5678-ijkl91011-mnop1213", riot_api_key, 5).await?;
 /// ```
 ///
 /// The resulting `match_ids` will be a vector of strings, such as:
@@ -440,17 +444,20 @@
 </span><span class="kw">pub async fn </span>get_matchs_id(
     client: <span class="kw-2">&amp;</span>Client,
     puuid: <span class="kw-2">&amp;</span>str,
-    riot_api_key: <span class="kw-2">&amp;</span>str
+    riot_api_key: <span class="kw-2">&amp;</span>str,
+    nb_match: u32
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;String&gt;, Error&gt; {
         <span class="kw">let </span>matchs_url = <span class="macro">format!</span>(
-            <span class="string">"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{}/ids?&amp;count=5&amp;api_key={}"</span>,
-            puuid, riot_api_key
+            <span class="string">"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{}/ids?&amp;count={}&amp;api_key={}"</span>,
+            puuid, nb_match.to_string(),  riot_api_key
         );
 
         <span class="kw">let </span>response = client.get(<span class="kw-2">&amp;</span>matchs_url).send().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>matchs_id: Vec&lt;String&gt; = response.json().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(matchs_id)
     }
+
+
 
 <span class="doccomment">/// ⚙️ **Function**: Fetches the summoner ID for a player using their PUUID.
 ///
@@ -495,8 +502,7 @@
         <span class="kw">let </span>summoner_json: Value = response.json().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>summoner_id = summoner_json.get(<span class="string">"id"</span>).and_then(Value::as_str).unwrap_or(<span class="string">""</span>).to_string();
         <span class="kw">if </span>summoner_id.is_empty() {
-            <span class="macro">error!</span>(<span class="string">"Error retrieving summoner ID for PUUID: {}"</span>, puuid); <span class="comment">// Log error
-            </span><span class="prelude-val">Err</span>(<span class="string">"Error retrieving summoner ID, check the region, game name and tag line you wrote."</span>.into())
+            <span class="prelude-val">Err</span>(<span class="string">"Error retrieving summoner ID. Please verify that the region, game name, and tag line you provided are correct, and try again."</span>.into())
         } <span class="kw">else </span>{
             <span class="prelude-val">Ok</span>(summoner_id)
         }
@@ -649,7 +655,7 @@
 /// ```
 </span><span class="kw">pub async fn </span>open_dd_json(
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Value, Error&gt; {
-        <span class="kw">let </span>dd_json = reqwest::get(<span class="string">"https://ddragon.leagueoflegends.com/cdn/14.17.1/data/fr_FR/champion.json"</span>).<span class="kw">await</span><span class="question-mark">?</span>.json().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>dd_json = reqwest::get(<span class="string">"https://ddragon.leagueoflegends.com/cdn/14.18.1/data/fr_FR/champion.json"</span>).<span class="kw">await</span><span class="question-mark">?</span>.json().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(dd_json)
     }
 
@@ -708,7 +714,10 @@
             <span class="string">"https://europe.api.riotgames.com/lol/match/v5/matches/{}?api_key={}"</span>,
             match_id, riot_api_key
         );
+        <span class="macro">eprint!</span>(<span class="string">"Fetching match data from {}...\n"</span>, matchs_info_url);
         <span class="kw">let </span>response = client.get(<span class="kw-2">&amp;</span>matchs_info_url).send().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>matchs_info: Value = response.json().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(matchs_info)
-    }</code></pre></div></section></main></body></html>
+    }
+
+</code></pre></div></section></main></body></html>

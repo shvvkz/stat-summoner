@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["create_and_send_embed_lolstats","extract_champions_info","extract_match_info","extract_rank_info"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["create_and_send_embed","create_embed","extract_champions_info","extract_match_info","extract_rank_info"]};
+window.SIDEBAR_ITEMS = {"fn":["create_embed","create_embed_error","create_embed_sucess","schedule_message_deletion"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["check_and_update_db","delete_follower","get_followed_summoners","get_latest_match_id","is_follow_time_expired","process_followed_summoner","send_match_update_to_discord","update_follower_if_new_match"]};

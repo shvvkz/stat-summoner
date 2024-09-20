@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"stat_summoner":[["impl&lt;'de&gt; <a class=\"trait\" href=\"https://docs.rs/serde/1.0.210/serde/de/trait.Deserialize.html\" title=\"trait serde::de::Deserialize\">Deserialize</a>&lt;'de&gt; for <a class=\"struct\" href=\"stat_summoner/models/data/struct.SummonerFollowedData.html\" title=\"struct stat_summoner::models::data::SummonerFollowedData\">SummonerFollowedData</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

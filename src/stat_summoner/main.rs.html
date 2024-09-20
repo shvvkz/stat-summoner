@@ -72,17 +72,58 @@
 <a href="#72" id="72">72</a>
 <a href="#73" id="73">73</a>
 <a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
 </pre></div><pre class="rust"><code><span class="kw">mod </span>riot_api;
 <span class="kw">mod </span>models;
 <span class="kw">mod </span>embed;
 <span class="kw">mod </span>utils;
-<span class="kw">mod </span>commands;
+<span class="kw">mod </span>module;
 
-<span class="kw">use </span>models::Data;
+<span class="kw">use </span>models::data::Data;
 <span class="kw">use </span>poise::serenity_prelude::{<span class="self">self </span><span class="kw">as </span>serenity};
 <span class="kw">use </span>shuttle_runtime::SecretStore;
 <span class="kw">use </span>shuttle_serenity::ShuttleSerenity;
-<span class="kw">use </span>commands::lolstats::lolstats;
+<span class="kw">use </span>module::lolstats::lolstats::lolstats;
+<span class="kw">use </span>module::followgames::followgames::followgames;
+<span class="kw">use </span>module::whoisfollowed::whoisfollowed::whoisfollowed;
+<span class="kw">use </span>mongodb::{Client, options::{ClientOptions, ServerApi, ServerApiVersion}};
+<span class="kw">use </span>mongodb::bson::doc;
+<span class="kw">use </span>tokio::time::{sleep, Duration};
+<span class="kw">use </span>tracing::log::error;
+<span class="kw">use </span>module::loop_module::loop_module::check_and_update_db;
 
 <span class="doccomment">/// ⚙️ **Function**: Initializes and starts the Discord bot using the Shuttle runtime and Poise framework.
 ///
@@ -116,7 +157,8 @@
 </span><span class="kw">async fn </span>main(
     <span class="attr">#[shuttle_runtime::Secrets] </span>secret_store: SecretStore
     ) -&gt; ShuttleSerenity {
-        <span class="kw">let </span>discord_token = secret_store
+        <span class="comment">// Récupérer le token Discord, la clé Riot API et l'URI MongoDB depuis les secrets
+        </span><span class="kw">let </span>discord_token = secret_store
             .get(<span class="string">"DISCORD_TOKEN"</span>)
             .ok_or_else(|| <span class="macro">anyhow::anyhow!</span>(<span class="string">"'DISCORD_TOKEN' was not found"</span>))<span class="question-mark">?</span>;
 
@@ -124,26 +166,52 @@
             .get(<span class="string">"RIOT_API_KEY"</span>)
             .ok_or_else(|| <span class="macro">anyhow::anyhow!</span>(<span class="string">"'RIOT_API_KEY' was not found"</span>))<span class="question-mark">?</span>;
 
-        <span class="kw">let </span>framework = poise::Framework::builder()
+        <span class="kw">let </span>mongodb_uri = secret_store
+            .get(<span class="string">"MONGODB_URI"</span>)
+            .ok_or_else(|| <span class="macro">anyhow::anyhow!</span>(<span class="string">"'MONGODB_URI' was not found"</span>))<span class="question-mark">?</span>;
+        <span class="comment">// Initialiser MongoDB
+        </span><span class="kw">let </span><span class="kw-2">mut </span>client_options = ClientOptions::parse(<span class="kw-2">&amp;</span>mongodb_uri).<span class="kw">await</span>.expect(<span class="string">"Failed to parse MongoDB URI"</span>);
+        <span class="kw">let </span>server_api = ServerApi::builder().version(ServerApiVersion::V1).build();
+        client_options.server_api = <span class="prelude-val">Some</span>(server_api);
+        <span class="kw">let </span>mongo_client = Client::with_options(client_options).expect(<span class="string">"Failed to create MongoDB client"</span>);
+        <span class="kw">let </span>mongo_client_clone = mongo_client.clone();
+        <span class="kw">let </span>riot_api_key_clone = riot_api_key.clone();
+        <span class="kw">let </span>dd_json = riot_api::open_dd_json().<span class="kw">await</span>.unwrap();
+        <span class="comment">// Configurer le framework Poise avec les commandes
+        </span><span class="kw">let </span>framework = poise::Framework::builder()
             .options(poise::FrameworkOptions {
-                commands: <span class="macro">vec!</span>[lolstats()],
+                commands: <span class="macro">vec!</span>[lolstats(), followgames(), whoisfollowed()],
                 ..Default::default()
             })
             .setup(<span class="kw">move </span>|_ctx, _ready, _framework| {
+                <span class="kw">let </span>riot_api_key = riot_api_key.clone();
+                <span class="kw">let </span>mongo_client = mongo_client.clone();
+                <span class="kw">let </span>dd_json = dd_json.clone();
                 Box::pin(<span class="kw">async move </span>{
                     poise::builtins::register_globally(_ctx, <span class="kw-2">&amp;</span>_framework.options().commands).<span class="kw">await</span><span class="question-mark">?</span>;
                     <span class="prelude-val">Ok</span>(Data {
                         riot_api_key,
+                        mongo_client,
+                        dd_json,
                     })
                 })
             })
             .build();
-
         <span class="kw">let </span>client = serenity::ClientBuilder::new(discord_token, serenity::GatewayIntents::non_privileged())
             .framework(framework)
             .<span class="kw">await
             </span>.map_err(shuttle_runtime::CustomError::new)<span class="question-mark">?</span>;
-
+        <span class="kw">let </span>http = client.http.clone();
+        tokio::spawn(<span class="kw">async move </span>{
+            <span class="kw">loop </span>{
+                <span class="comment">// Exécuter la vérification périodique de la base de données
+                </span><span class="kw">match </span>check_and_update_db(<span class="kw-2">&amp;</span>mongo_client_clone, <span class="kw-2">&amp;</span>riot_api_key_clone, http.clone(), ).<span class="kw">await </span>{
+                    <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; (),
+                    <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">error!</span>(<span class="string">"Erreur lors de la vérification de la base de données : {:?}"</span>, e),
+                }
+                sleep(Duration::from_secs(<span class="number">120</span>)).<span class="kw">await</span>; <span class="comment">// Attendre 2 minutes
+            </span>}
+        });
         <span class="prelude-val">Ok</span>(client.into())
     }
 </code></pre></div></section></main></body></html>
