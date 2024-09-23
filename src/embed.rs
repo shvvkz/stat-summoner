@@ -107,7 +107,7 @@ pub fn create_embed(
                 },
                 false
             )
-            .footer(CreateEmbedFooter::new("Ce message sera supprimé dans 60 secondes."));
+            .footer(CreateEmbedFooter::new("This message will be deleted in 60 seconds."));
         embed
     }
 
@@ -150,7 +150,7 @@ pub fn create_embed_error(
             .title("Error")
             .description(error_message)
             .color(0xff0000)
-            .footer(CreateEmbedFooter::new("Ce message sera supprimé dans 60 secondes."));
+            .footer(CreateEmbedFooter::new("This message will be deleted in 60 seconds."));
         CreateReply {
             embeds: vec![embed],
             ..Default::default()
@@ -170,7 +170,7 @@ pub fn create_embed_error(
 /// - `CreateReply`: A Discord reply containing the constructed success embed.
 ///
 /// # ⚠️ Notes:
-/// - The embed's footer is in French: "Ce message sera supprimé dans 60 secondes." ("This message will be deleted in 60 seconds.").
+/// - The embed's footer is in French: "This message will be deleted in 60 seconds." ("This message will be deleted in 60 seconds.").
 /// - The title "Sucess" appears to have a typo and might be intended as "Success".
 /// - The embed uses a green color (`0x00ff00`) to visually indicate a successful operation.
 ///
@@ -186,7 +186,7 @@ pub fn create_embed_sucess(
             .title("Sucess")
             .description(sucess_message)
             .color(0x00ff00)
-            .footer(CreateEmbedFooter::new("Ce message sera supprimé dans 60 secondes."));
+            .footer(CreateEmbedFooter::new("This message will be deleted in 60 seconds."));
         CreateReply {
             embeds: vec![embed],
             ..Default::default()

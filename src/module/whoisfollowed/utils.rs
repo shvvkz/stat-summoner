@@ -198,7 +198,7 @@ pub fn create_embed_followed_summoner(
     ) -> CreateReply {
         let binding = vec![];
         let tracked_summoners = data["tracked_summoners"].as_array().unwrap_or(&binding);
-        let mut embed = CreateEmbed::new().title("Tracked Summoners").color(0xA020F0).footer(CreateEmbedFooter::new("Ce message sera supprimé dans 60 secondes."));
+        let mut embed = CreateEmbed::new().title("Tracked Summoners").color(0xA020F0).footer(CreateEmbedFooter::new("This message will be deleted in 60 seconds."));
 
         if tracked_summoners.is_empty(){
             embed = embed.field(
