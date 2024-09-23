@@ -296,6 +296,8 @@
 <a href="#296" id="296">296</a>
 <a href="#297" id="297">297</a>
 <a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
 <span class="kw">use </span>poise::CreateReply;
 <span class="kw">use </span>reqwest::Client;
@@ -356,6 +358,7 @@
     champions: Vec&lt;HashMap&lt;String, Value&gt;&gt;,
     match_ids: Vec&lt;String&gt;,
     ctx: <span class="kw-2">&amp;</span>poise::ApplicationContext&lt;<span class="lifetime">'_</span>, Data, Error&gt;,
+    mongo_client: <span class="kw-2">&amp;</span>mongodb::Client
     ) -&gt; CreateReply {
 
         <span class="kw">let </span>dd_json = <span class="kw-2">&amp;</span>ctx.data().dd_json;
@@ -366,7 +369,7 @@
         <span class="kw">let </span>champions_info = extract_champions_info(champions, champions_data);
         <span class="kw">let </span>match_details= extract_match_info(match_ids, ctx, summoner_id).<span class="kw">await</span>;
 
-        <span class="kw">let </span>embed = create_embed(modal_data, solo_rank, flex_rank, champions_info, match_details);
+        <span class="kw">let </span>embed = create_embed(modal_data, solo_rank, flex_rank, champions_info, match_details, mongo_client).<span class="kw">await</span>.unwrap();
 
         CreateReply {
             embeds: <span class="macro">vec!</span>[embed],
@@ -484,12 +487,13 @@
     champions: Vec&lt;HashMap&lt;String, Value&gt;&gt;,
     champions_data: <span class="kw-2">&amp;</span>Map&lt;String, Value&gt;
     ) -&gt; String {
-        champions.iter().map(|champion| {
+        <span class="comment">//CONNEXION ICI ENSUITE ON MET L'EMOJI A LA PLACE DU NOM DU CHAMP 
+        </span>champions.iter().map(|champion| {
             <span class="kw">let </span>champion_id = champion.get(<span class="string">"championId"</span>).unwrap().as_i64().unwrap().to_string();
             <span class="kw">let </span>champion_name = champions_data.values().find_map(|data| {
                 <span class="kw">let </span>champ = data.as_object().unwrap();
                 <span class="kw">if </span>champ.get(<span class="string">"key"</span>).unwrap() == <span class="kw-2">&amp;</span>Value::String(champion_id.clone()) {
-                    <span class="prelude-val">Some</span>(champ.get(<span class="string">"name"</span>).unwrap().as_str().unwrap())
+                    <span class="prelude-val">Some</span>(champ.get(<span class="string">"id"</span>).unwrap().as_str().unwrap())
                 } <span class="kw">else </span>{
                     <span class="prelude-val">None
                 </span>}

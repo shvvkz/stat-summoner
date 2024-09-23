@@ -233,9 +233,23 @@
 <a href="#233" id="233">233</a>
 <a href="#234" id="234">234</a>
 <a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>poise::{serenity_prelude::{<span class="self">self </span><span class="kw">as </span>serenity}, CreateReply};
 <span class="kw">use </span>serde_json::Value;
-<span class="kw">use </span><span class="kw">crate</span>::models::data::Data;
+<span class="kw">use crate</span>::{models::data::Data, utils::get_emoji};
 <span class="kw">use </span><span class="kw">crate</span>::models::modal::LolStatsModal;
 <span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
 <span class="kw">use </span>serenity::builder::{CreateEmbed, CreateEmbedFooter};
@@ -282,42 +296,54 @@
 /// K/D/A: **10/2/8** | **200 CS** | Duration: **30:45**
 /// ⏳ Played: **2 hours ago**
 /// ```
-</span><span class="kw">pub fn </span>create_embed(
+</span><span class="kw">pub async fn </span>create_embed(
     modal_data: <span class="kw-2">&amp;</span>LolStatsModal,
     solo_rank: Value,
     flex_rank: Value,
     champions_info: String,
     match_details: Vec&lt;Value&gt;,
-    ) -&gt; CreateEmbed {
-        <span class="kw">let </span>solo_rank_str = <span class="kw">if </span>solo_rank[<span class="string">"lp"</span>].as_i64().unwrap() &gt; <span class="number">0 </span>{
-            <span class="kw">if </span>!solo_rank[<span class="string">"division"</span>].as_str().unwrap().is_empty() {
-                <span class="macro">format!</span>(<span class="string">"**{} {}** ({} LP)"</span>, solo_rank[<span class="string">"tier"</span>].as_str().unwrap(), solo_rank[<span class="string">"division"</span>].as_str().unwrap(), solo_rank[<span class="string">"lp"</span>].as_i64().unwrap())
+    mongo_client: <span class="kw-2">&amp;</span>mongodb::Client
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;CreateEmbed, Error&gt; {
+    
+        <span class="comment">// Récupérer les émojis pour le rang solo et flex
+        </span><span class="kw">let </span>solo_rank_tier = solo_rank[<span class="string">"tier"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>);
+        <span class="kw">let </span>solo_emoji = get_emoji(mongo_client, <span class="string">"rank"</span>, solo_rank_tier).<span class="kw">await</span>.unwrap_or(solo_rank_tier.to_string());
+        <span class="macro">println!</span>(<span class="string">"{}"</span>,solo_emoji);
+    
+        <span class="kw">let </span>flex_rank_tier = flex_rank[<span class="string">"tier"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>);
+        <span class="kw">let </span>flex_emoji = get_emoji(mongo_client, <span class="string">"rank"</span>, flex_rank_tier).<span class="kw">await</span>.unwrap_or(flex_rank_tier.to_string());
+    
+        <span class="comment">// Construction de la chaîne du rang Solo/Duo
+        </span><span class="kw">let </span>solo_rank_str = <span class="kw">if </span>solo_rank[<span class="string">"lp"</span>].as_i64().unwrap_or(<span class="number">0</span>) &gt; <span class="number">0 </span>{
+            <span class="kw">if </span>!solo_rank[<span class="string">"division"</span>].as_str().unwrap_or(<span class="string">""</span>).is_empty() {
+                <span class="macro">format!</span>(<span class="string">"**{} {}** - {} LP"</span>, solo_emoji, solo_rank[<span class="string">"division"</span>].as_str().unwrap(), solo_rank[<span class="string">"lp"</span>].as_i64().unwrap())
             } <span class="kw">else </span>{
-                <span class="macro">format!</span>(<span class="string">"**{}** ({} LP)"</span>, solo_rank[<span class="string">"tier"</span>].as_str().unwrap(), solo_rank[<span class="string">"lp"</span>].as_str().unwrap())
+                <span class="macro">format!</span>(<span class="string">"**{}** - {} LP"</span>, solo_emoji, solo_rank[<span class="string">"lp"</span>].as_i64().unwrap())
             }
         } <span class="kw">else </span>{
-            <span class="macro">format!</span>(<span class="string">"**{}**"</span>, solo_rank[<span class="string">"tier"</span>].as_str().unwrap())
+            <span class="macro">format!</span>(<span class="string">"**{}**"</span>, solo_emoji)
         };
-
-        <span class="kw">let </span>flex_rank_str = <span class="kw">if </span>flex_rank[<span class="string">"lp"</span>].as_i64().unwrap() &gt; <span class="number">0 </span>{
-            <span class="kw">if </span>!flex_rank[<span class="string">"division"</span>].as_str().unwrap().is_empty() {
-                <span class="macro">format!</span>(<span class="string">"**{} {}** ({} LP)"</span>, flex_rank[<span class="string">"tier"</span>].as_str().unwrap(), flex_rank[<span class="string">"division"</span>].as_str().unwrap(), flex_rank[<span class="string">"lp"</span>].as_i64().unwrap())
+    
+        <span class="comment">// Construction de la chaîne du rang Flex
+        </span><span class="kw">let </span>flex_rank_str = <span class="kw">if </span>flex_rank[<span class="string">"lp"</span>].as_i64().unwrap_or(<span class="number">0</span>) &gt; <span class="number">0 </span>{
+            <span class="kw">if </span>!flex_rank[<span class="string">"division"</span>].as_str().unwrap_or(<span class="string">""</span>).is_empty() {
+                <span class="macro">format!</span>(<span class="string">"**{} {}** ({} LP)"</span>, flex_emoji, flex_rank[<span class="string">"division"</span>].as_str().unwrap(), flex_rank[<span class="string">"lp"</span>].as_i64().unwrap())
             } <span class="kw">else </span>{
-                <span class="macro">format!</span>(<span class="string">"**{}** ({} LP)"</span>, flex_rank[<span class="string">"tier"</span>].as_str().unwrap(), flex_rank[<span class="string">"lp"</span>].as_str().unwrap())
+                <span class="macro">format!</span>(<span class="string">"**{}** ({} LP)"</span>, flex_emoji, flex_rank[<span class="string">"lp"</span>].as_i64().unwrap())
             }
         } <span class="kw">else </span>{
-            <span class="macro">format!</span>(<span class="string">"**{}**"</span>, flex_rank[<span class="string">"tier"</span>].as_str().unwrap())
+            <span class="macro">format!</span>(<span class="string">"**{}**"</span>, flex_emoji)
         };
-
-        <span class="comment">// Build the embed message
+    
+        <span class="comment">// Construction de l'embed
         </span><span class="kw">let </span>embed = CreateEmbed::default()
             .title(<span class="macro">format!</span>(<span class="string">"📊 Stats for **{}#{}**"</span>, modal_data.game_name, modal_data.tag_line))
             .color(<span class="number">0x00ff00</span>)
-            .field(<span class="string">"🔱 **Solo/Duo Rank**"</span>, solo_rank_str, <span class="bool-val">false</span>)
+            .field(<span class="string">"**Solo/Duo Rank**"</span>, solo_rank_str, <span class="bool-val">false</span>)
             .field(<span class="string">"🏆 **Wins**"</span>, <span class="macro">format!</span>(<span class="string">"**{}**"</span>, solo_rank[<span class="string">"wins"</span>].as_i64().unwrap_or(-<span class="number">1</span>)), <span class="bool-val">true</span>)
             .field(<span class="string">"❌ **Losses**"</span>, <span class="macro">format!</span>(<span class="string">"**{}**"</span>, solo_rank[<span class="string">"losses"</span>].as_i64().unwrap_or(-<span class="number">1</span>)), <span class="bool-val">true</span>)
             .field(<span class="string">"📊 **Winrate**"</span>, <span class="macro">format!</span>(<span class="string">"**{:.2}%**"</span>, solo_rank[<span class="string">"winrate"</span>].as_f64().unwrap_or(-<span class="number">1.0</span>)), <span class="bool-val">true</span>)
-            .field(<span class="string">"🌀 **Flex Rank**"</span>, flex_rank_str, <span class="bool-val">false</span>)
+            .field(<span class="string">"**Flex Rank**"</span>, flex_rank_str, <span class="bool-val">false</span>)
             .field(<span class="string">"🏆 **Wins**"</span>, <span class="macro">format!</span>(<span class="string">"**{}**"</span>, flex_rank[<span class="string">"wins"</span>].as_i64().unwrap_or(-<span class="number">1</span>)), <span class="bool-val">true</span>)
             .field(<span class="string">"❌ **Losses**"</span>, <span class="macro">format!</span>(<span class="string">"**{}**"</span>, flex_rank[<span class="string">"losses"</span>].as_i64().unwrap_or(-<span class="number">1</span>)), <span class="bool-val">true</span>)
             .field(<span class="string">"📊 **Winrate**"</span>, <span class="macro">format!</span>(<span class="string">"**{:.2}%**"</span>, flex_rank[<span class="string">"winrate"</span>].as_f64().unwrap_or(-<span class="number">1.0</span>)), <span class="bool-val">true</span>)
@@ -343,8 +369,10 @@
                 <span class="bool-val">false
             </span>)
             .footer(CreateEmbedFooter::new(<span class="string">"This message will be deleted in 60 seconds."</span>));
-        embed
+        
+        <span class="prelude-val">Ok</span>(embed)
     }
+
 
 
 <span class="doccomment">/// ⚙️ **Function**: Creates an embed displaying an error message for Discord interactions.

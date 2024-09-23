@@ -286,8 +286,8 @@
         default_rank.insert(<span class="string">"queueType"</span>.to_string(), serde_json::Value::String(<span class="string">""</span>.to_string()));
 
         <span class="kw">let </span>(solo_rank, flex_rank) = determine_solo_flex(<span class="kw-2">&amp;</span>rank_info, <span class="kw-2">&amp;</span>default_rank);
-
-        <span class="kw">let </span>reply = create_and_send_embed_lolstats(<span class="kw-2">&amp;</span>modal_data, summoner_id, <span class="kw-2">&amp;</span>solo_rank, <span class="kw-2">&amp;</span>flex_rank, champions, match_ids, <span class="kw-2">&amp;</span>ctx).<span class="kw">await</span>;
+        <span class="kw">let </span>mongo_client: <span class="kw-2">&amp;</span>mongodb::Client = <span class="kw-2">&amp;</span>ctx.data().mongo_client;
+        <span class="kw">let </span>reply = create_and_send_embed_lolstats(<span class="kw-2">&amp;</span>modal_data, summoner_id, <span class="kw-2">&amp;</span>solo_rank, <span class="kw-2">&amp;</span>flex_rank, champions, match_ids, <span class="kw-2">&amp;</span>ctx, mongo_client).<span class="kw">await</span>;
         <span class="kw">let </span>sent_message = ctx.send(reply).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = schedule_message_deletion(sent_message, ctx).<span class="kw">await </span>{
             <span class="macro">eprintln!</span>(<span class="string">"Failed to schedule message deletion: {}"</span>, e);

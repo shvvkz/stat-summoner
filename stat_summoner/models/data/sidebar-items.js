@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["Data","SummonerFollowedData"]};
+window.SIDEBAR_ITEMS = {"struct":["Data","EmojiId","SummonerFollowedData"]};

@@ -19,6 +19,13 @@
 <a href="#19" id="19">19</a>
 <a href="#20" id="20">20</a>
 <a href="#21" id="21">21</a>
+<a href="#22" id="22">22</a>
+<a href="#23" id="23">23</a>
+<a href="#24" id="24">24</a>
+<a href="#25" id="25">25</a>
+<a href="#26" id="26">26</a>
+<a href="#27" id="27">27</a>
+<a href="#28" id="28">28</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>mongodb::Client;
 <span class="kw">use </span>serde_json::Value;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
@@ -40,4 +47,10 @@
     <span class="kw">pub </span>channel_id: u64,
     <span class="kw">pub </span>guild_id: String,
 }
-</code></pre></div></section></main></body></html>
+
+<span class="attr">#[derive(Debug, Serialize, Deserialize)]
+</span><span class="kw">pub struct </span>EmojiId{
+    <span class="kw">pub </span>role: String,
+    <span class="kw">pub </span>name: String,
+    <span class="kw">pub </span>id_emoji: String
+}</code></pre></div></section></main></body></html>
