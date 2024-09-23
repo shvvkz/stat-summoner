@@ -19,3 +19,10 @@ pub struct SummonerFollowedData {
     pub channel_id: u64,
     pub guild_id: String,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EmojiId{
+    pub role: String,
+    pub name: String,
+    pub id_emoji: String
+}

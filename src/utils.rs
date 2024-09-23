@@ -1,4 +1,8 @@
 use chrono::{Utc, NaiveDateTime};
+use mongodb::bson::doc;
+use mongodb::{Client, Collection};
+use crate::models::data::EmojiId;
+use serde::de::value::Error;
 use crate::models::constants::QUEUE_ID_MAP;
 use crate::models::region::Region;
 use std::collections::HashMap;
@@ -222,3 +226,23 @@ pub fn seconds_to_time(
         };
         (game_duration_minutes.to_string(), game_duration_seconds_str)
     }
+
+pub async fn get_emoji(mongo_client: &Client, role: &str, name: &str) -> Result<String, Error> {
+    let collection = mongo_client
+        .database("stat-summoner")
+        .collection::<EmojiId>("emojis_id");
+    let filter = doc! { "role": role, "name": name };
+
+    match collection.find_one(filter).await {
+
+        Ok(Some(emoji_id)) => {
+            let emoji_str = format!("<:{}:{}>", name, emoji_id.id_emoji);
+            Ok(emoji_str)
+        },
+        Ok(None) => Ok(name.to_string()),
+        Err(e) => {
+            eprintln!("Erreur lors de la recherche de l'emoji: {:?}", e);
+            Ok(name.to_string())
+        }
+    }
+}

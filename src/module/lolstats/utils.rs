@@ -58,6 +58,7 @@ pub async fn create_and_send_embed_lolstats(
     champions: Vec<HashMap<String, Value>>,
     match_ids: Vec<String>,
     ctx: &poise::ApplicationContext<'_, Data, Error>,
+    mongo_client: &mongodb::Client
     ) -> CreateReply {
 
         let dd_json = &ctx.data().dd_json;
@@ -68,7 +69,7 @@ pub async fn create_and_send_embed_lolstats(
         let champions_info = extract_champions_info(champions, champions_data);
         let match_details= extract_match_info(match_ids, ctx, summoner_id).await;
 
-        let embed = create_embed(modal_data, solo_rank, flex_rank, champions_info, match_details);
+        let embed = create_embed(modal_data, solo_rank, flex_rank, champions_info, match_details, mongo_client).await.unwrap();
 
         CreateReply {
             embeds: vec![embed],
@@ -186,12 +187,13 @@ fn extract_champions_info(
     champions: Vec<HashMap<String, Value>>,
     champions_data: &Map<String, Value>
     ) -> String {
+        //CONNEXION ICI ENSUITE ON MET L'EMOJI A LA PLACE DU NOM DU CHAMP 
         champions.iter().map(|champion| {
             let champion_id = champion.get("championId").unwrap().as_i64().unwrap().to_string();
             let champion_name = champions_data.values().find_map(|data| {
                 let champ = data.as_object().unwrap();
                 if champ.get("key").unwrap() == &Value::String(champion_id.clone()) {
-                    Some(champ.get("name").unwrap().as_str().unwrap())
+                    Some(champ.get("id").unwrap().as_str().unwrap())
                 } else {
                     None
                 }

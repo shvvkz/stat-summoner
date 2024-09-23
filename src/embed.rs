@@ -1,6 +1,6 @@
 use poise::{serenity_prelude::{self as serenity}, CreateReply};
 use serde_json::Value;
-use crate::models::data::Data;
+use crate::{models::data::Data, utils::get_emoji};
 use crate::models::modal::LolStatsModal;
 use crate::models::error::Error;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
@@ -47,42 +47,54 @@ use poise::ReplyHandle;
 /// K/D/A: **10/2/8** | **200 CS** | Duration: **30:45**
 /// ⏳ Played: **2 hours ago**
 /// ```
-pub fn create_embed(
+pub async fn create_embed(
     modal_data: &LolStatsModal,
     solo_rank: Value,
     flex_rank: Value,
     champions_info: String,
     match_details: Vec<Value>,
-    ) -> CreateEmbed {
-        let solo_rank_str = if solo_rank["lp"].as_i64().unwrap() > 0 {
-            if !solo_rank["division"].as_str().unwrap().is_empty() {
-                format!("**{} {}** ({} LP)", solo_rank["tier"].as_str().unwrap(), solo_rank["division"].as_str().unwrap(), solo_rank["lp"].as_i64().unwrap())
+    mongo_client: &mongodb::Client
+    ) -> Result<CreateEmbed, Error> {
+    
+        // Récupérer les émojis pour le rang solo et flex
+        let solo_rank_tier = solo_rank["tier"].as_str().unwrap_or("Unknown");
+        let solo_emoji = get_emoji(mongo_client, "rank", solo_rank_tier).await.unwrap_or(solo_rank_tier.to_string());
+        println!("{}",solo_emoji);
+    
+        let flex_rank_tier = flex_rank["tier"].as_str().unwrap_or("Unknown");
+        let flex_emoji = get_emoji(mongo_client, "rank", flex_rank_tier).await.unwrap_or(flex_rank_tier.to_string());
+    
+        // Construction de la chaîne du rang Solo/Duo
+        let solo_rank_str = if solo_rank["lp"].as_i64().unwrap_or(0) > 0 {
+            if !solo_rank["division"].as_str().unwrap_or("").is_empty() {
+                format!("**{} {}** - {} LP", solo_emoji, solo_rank["division"].as_str().unwrap(), solo_rank["lp"].as_i64().unwrap())
             } else {
-                format!("**{}** ({} LP)", solo_rank["tier"].as_str().unwrap(), solo_rank["lp"].as_str().unwrap())
+                format!("**{}** - {} LP", solo_emoji, solo_rank["lp"].as_i64().unwrap())
             }
         } else {
-            format!("**{}**", solo_rank["tier"].as_str().unwrap())
+            format!("**{}**", solo_emoji)
         };
-
-        let flex_rank_str = if flex_rank["lp"].as_i64().unwrap() > 0 {
-            if !flex_rank["division"].as_str().unwrap().is_empty() {
-                format!("**{} {}** ({} LP)", flex_rank["tier"].as_str().unwrap(), flex_rank["division"].as_str().unwrap(), flex_rank["lp"].as_i64().unwrap())
+    
+        // Construction de la chaîne du rang Flex
+        let flex_rank_str = if flex_rank["lp"].as_i64().unwrap_or(0) > 0 {
+            if !flex_rank["division"].as_str().unwrap_or("").is_empty() {
+                format!("**{} {}** ({} LP)", flex_emoji, flex_rank["division"].as_str().unwrap(), flex_rank["lp"].as_i64().unwrap())
             } else {
-                format!("**{}** ({} LP)", flex_rank["tier"].as_str().unwrap(), flex_rank["lp"].as_str().unwrap())
+                format!("**{}** ({} LP)", flex_emoji, flex_rank["lp"].as_i64().unwrap())
             }
         } else {
-            format!("**{}**", flex_rank["tier"].as_str().unwrap())
+            format!("**{}**", flex_emoji)
         };
-
-        // Build the embed message
+    
+        // Construction de l'embed
         let embed = CreateEmbed::default()
             .title(format!("📊 Stats for **{}#{}**", modal_data.game_name, modal_data.tag_line))
             .color(0x00ff00)
-            .field("🔱 **Solo/Duo Rank**", solo_rank_str, false)
+            .field("**Solo/Duo Rank**", solo_rank_str, false)
             .field("🏆 **Wins**", format!("**{}**", solo_rank["wins"].as_i64().unwrap_or(-1)), true)
             .field("❌ **Losses**", format!("**{}**", solo_rank["losses"].as_i64().unwrap_or(-1)), true)
             .field("📊 **Winrate**", format!("**{:.2}%**", solo_rank["winrate"].as_f64().unwrap_or(-1.0)), true)
-            .field("🌀 **Flex Rank**", flex_rank_str, false)
+            .field("**Flex Rank**", flex_rank_str, false)
             .field("🏆 **Wins**", format!("**{}**", flex_rank["wins"].as_i64().unwrap_or(-1)), true)
             .field("❌ **Losses**", format!("**{}**", flex_rank["losses"].as_i64().unwrap_or(-1)), true)
             .field("📊 **Winrate**", format!("**{:.2}%**", flex_rank["winrate"].as_f64().unwrap_or(-1.0)), true)
@@ -108,8 +120,10 @@ pub fn create_embed(
                 false
             )
             .footer(CreateEmbedFooter::new("This message will be deleted in 60 seconds."));
-        embed
+        
+        Ok(embed)
     }
+
 
 
 /// ⚙️ **Function**: Creates an embed displaying an error message for Discord interactions.

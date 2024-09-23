@@ -138,8 +138,8 @@ pub async fn lolstats(
         default_rank.insert("queueType".to_string(), serde_json::Value::String("".to_string()));
 
         let (solo_rank, flex_rank) = determine_solo_flex(&rank_info, &default_rank);
-
-        let reply = create_and_send_embed_lolstats(&modal_data, summoner_id, &solo_rank, &flex_rank, champions, match_ids, &ctx).await;
+        let mongo_client: &mongodb::Client = &ctx.data().mongo_client;
+        let reply = create_and_send_embed_lolstats(&modal_data, summoner_id, &solo_rank, &flex_rank, champions, match_ids, &ctx, mongo_client).await;
         let sent_message = ctx.send(reply).await?;
         if let Err(e) = schedule_message_deletion(sent_message, ctx).await {
             eprintln!("Failed to schedule message deletion: {}", e);
