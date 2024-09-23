@@ -342,7 +342,7 @@
                 },
                 <span class="bool-val">false
             </span>)
-            .footer(CreateEmbedFooter::new(<span class="string">"Ce message sera supprimé dans 60 secondes."</span>));
+            .footer(CreateEmbedFooter::new(<span class="string">"This message will be deleted in 60 seconds."</span>));
         embed
     }
 
@@ -385,7 +385,7 @@
             .title(<span class="string">"Error"</span>)
             .description(error_message)
             .color(<span class="number">0xff0000</span>)
-            .footer(CreateEmbedFooter::new(<span class="string">"Ce message sera supprimé dans 60 secondes."</span>));
+            .footer(CreateEmbedFooter::new(<span class="string">"This message will be deleted in 60 seconds."</span>));
         CreateReply {
             embeds: <span class="macro">vec!</span>[embed],
             ..Default::default()
@@ -405,7 +405,7 @@
 /// - `CreateReply`: A Discord reply containing the constructed success embed.
 ///
 /// # ⚠️ Notes:
-/// - The embed's footer is in French: "Ce message sera supprimé dans 60 secondes." ("This message will be deleted in 60 seconds.").
+/// - The embed's footer is in French: "This message will be deleted in 60 seconds." ("This message will be deleted in 60 seconds.").
 /// - The title "Sucess" appears to have a typo and might be intended as "Success".
 /// - The embed uses a green color (`0x00ff00`) to visually indicate a successful operation.
 ///
@@ -421,7 +421,7 @@
             .title(<span class="string">"Sucess"</span>)
             .description(sucess_message)
             .color(<span class="number">0x00ff00</span>)
-            .footer(CreateEmbedFooter::new(<span class="string">"Ce message sera supprimé dans 60 secondes."</span>));
+            .footer(CreateEmbedFooter::new(<span class="string">"This message will be deleted in 60 seconds."</span>));
         CreateReply {
             embeds: <span class="macro">vec!</span>[embed],
             ..Default::default()

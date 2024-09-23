@@ -427,7 +427,7 @@
     ) -&gt; CreateReply {
         <span class="kw">let </span>binding = <span class="macro">vec!</span>[];
         <span class="kw">let </span>tracked_summoners = data[<span class="string">"tracked_summoners"</span>].as_array().unwrap_or(<span class="kw-2">&amp;</span>binding);
-        <span class="kw">let </span><span class="kw-2">mut </span>embed = CreateEmbed::new().title(<span class="string">"Tracked Summoners"</span>).color(<span class="number">0xA020F0</span>).footer(CreateEmbedFooter::new(<span class="string">"Ce message sera supprimé dans 60 secondes."</span>));
+        <span class="kw">let </span><span class="kw-2">mut </span>embed = CreateEmbed::new().title(<span class="string">"Tracked Summoners"</span>).color(<span class="number">0xA020F0</span>).footer(CreateEmbedFooter::new(<span class="string">"This message will be deleted in 60 seconds."</span>));
 
         <span class="kw">if </span>tracked_summoners.is_empty(){
             embed = embed.field(
