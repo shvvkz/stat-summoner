@@ -19,11 +19,16 @@ jobs:
         toolchain: stable
         override: true
 
+    - name: Check Rust code formatting
+      run: cargo fmt -- --check
+
     - name: Generate documentation
       run: cargo doc --no-deps
+      if: success()
 
     - name: Disable Jekyll
       run: echo "" > ./target/doc/.nojekyll
+      if: success()
 
     - name: Create index.html
       run: |
@@ -39,10 +44,11 @@ jobs:
             <p>If you are not redirected automatically, follow this <a href="./stat_summoner/index.html">link</a>.</p>
         </body>
         </html>' > ./target/doc/index.html
+      if: success()
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./target/doc
-
+      if: success()

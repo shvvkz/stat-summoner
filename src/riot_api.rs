@@ -1,7 +1,7 @@
+use crate::models::error::Error;
 use reqwest::Client;
 use serde_json::Value;
 use std::collections::HashMap;
-use crate::models::error::Error;
 
 /// ⚙️ **Function**: Fetches the player's PUUID (Player Unique Identifier) from the Riot API.
 ///
@@ -34,27 +34,31 @@ pub async fn get_puuid(
     client: &Client,
     game_name_space: &str,
     tag_line: &str,
-    riot_api_key: &str
-    ) -> Result<String, Error> {
-        let puuid_url = format!(
-            "https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{}/{}?api_key={}",
-            game_name_space, tag_line, riot_api_key
-        );
+    riot_api_key: &str,
+) -> Result<String, Error> {
+    let puuid_url = format!(
+        "https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{}/{}?api_key={}",
+        game_name_space, tag_line, riot_api_key
+    );
 
-        let response = client.get(&puuid_url).send().await?;
-        let puuid_json: Value = response.json().await?;
-        let puuid = puuid_json.get("puuid").and_then(Value::as_str).unwrap_or("").to_string();
+    let response = client.get(&puuid_url).send().await?;
+    let puuid_json: Value = response.json().await?;
+    let puuid = puuid_json
+        .get("puuid")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
 
-        if puuid.is_empty() {
-            Err("The player could not be found. Please verify that the region, game name, and tag line you provided are correct, and try again.".into())
-        } else {
-            Ok(puuid)
-        }
+    if puuid.is_empty() {
+        Err("The player could not be found. Please verify that the region, game name, and tag line you provided are correct, and try again.".into())
+    } else {
+        Ok(puuid)
     }
+}
 
 /// ⚙️ **Function**: Retrieves recent match IDs for a given player using their PUUID.
 ///
-/// This function sends a request to the Riot API to fetch the IDs of the player's recent matches based on their PUUID. 
+/// This function sends a request to the Riot API to fetch the IDs of the player's recent matches based on their PUUID.
 /// The match IDs are used to fetch detailed match data in subsequent API requests.
 ///
 /// # Parameters:
@@ -84,24 +88,22 @@ pub async fn get_matchs_id(
     client: &Client,
     puuid: &str,
     riot_api_key: &str,
-    nb_match: u32
-    ) -> Result<Vec<String>, Error> {
-        let matchs_url = format!(
+    nb_match: u32,
+) -> Result<Vec<String>, Error> {
+    let matchs_url = format!(
             "https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{}/ids?&count={}&api_key={}",
             puuid, nb_match.to_string(),  riot_api_key
         );
 
-        let response = client.get(&matchs_url).send().await?;
-        let matchs_id: Vec<String> = response.json().await?;
-        Ok(matchs_id)
-    }
-
-
+    let response = client.get(&matchs_url).send().await?;
+    let matchs_id: Vec<String> = response.json().await?;
+    Ok(matchs_id)
+}
 
 /// ⚙️ **Function**: Fetches the summoner ID for a player using their PUUID.
 ///
-/// This function sends a request to the Riot API to retrieve the summoner ID of a player, which is used for further 
-/// requests related to match history and player information. The summoner ID is specific to the player's account in 
+/// This function sends a request to the Riot API to retrieve the summoner ID of a player, which is used for further
+/// requests related to match history and player information. The summoner ID is specific to the player's account in
 /// the given region.
 ///
 /// # Parameters:
@@ -130,26 +132,30 @@ pub async fn get_summoner_id(
     client: &Client,
     region_str: &str,
     puuid: &str,
-    riot_api_key: &str
-    ) -> Result<String, Error> {
-        let summoner_url = format!(
-            "https://{}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{}?api_key={}",
-            region_str, puuid, riot_api_key
-        );
+    riot_api_key: &str,
+) -> Result<String, Error> {
+    let summoner_url = format!(
+        "https://{}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{}?api_key={}",
+        region_str, puuid, riot_api_key
+    );
 
-        let response = client.get(&summoner_url).send().await?;
-        let summoner_json: Value = response.json().await?;
-        let summoner_id = summoner_json.get("id").and_then(Value::as_str).unwrap_or("").to_string();
-        if summoner_id.is_empty() {
-            Err("Error retrieving summoner ID. Please verify that the region, game name, and tag line you provided are correct, and try again.".into())
-        } else {
-            Ok(summoner_id)
-        }
+    let response = client.get(&summoner_url).send().await?;
+    let summoner_json: Value = response.json().await?;
+    let summoner_id = summoner_json
+        .get("id")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    if summoner_id.is_empty() {
+        Err("Error retrieving summoner ID. Please verify that the region, game name, and tag line you provided are correct, and try again.".into())
+    } else {
+        Ok(summoner_id)
     }
+}
 
 /// ⚙️ **Function**: Fetches ranked information for a player using their summoner ID.
 ///
-/// This function sends a request to the Riot API to retrieve ranked information for a player, including their rank, 
+/// This function sends a request to the Riot API to retrieve ranked information for a player, including their rank,
 /// division, league points (LP), wins, and losses in different game modes (e.g., Solo/Duo, Flex).
 ///
 /// # Parameters:
@@ -195,15 +201,15 @@ pub async fn get_rank_info(
     client: &Client,
     region_str: &str,
     summoner_id: &str,
-    riot_api_key: &str
-    ) -> Result<Vec<HashMap<String, Value>>, Error> {
-        let rank_url = format!(
-            "https://{}.api.riotgames.com/lol/league/v4/entries/by-summoner/{}?api_key={}",
-            region_str, summoner_id, riot_api_key
-        );
-        let response = client.get(&rank_url).send().await?;
-        Ok(response.json().await?)
-    }
+    riot_api_key: &str,
+) -> Result<Vec<HashMap<String, Value>>, Error> {
+    let rank_url = format!(
+        "https://{}.api.riotgames.com/lol/league/v4/entries/by-summoner/{}?api_key={}",
+        region_str, summoner_id, riot_api_key
+    );
+    let response = client.get(&rank_url).send().await?;
+    Ok(response.json().await?)
+}
 
 /// ⚙️ **Function**: Retrieves the top 10 champions for a player based on champion mastery.
 ///
@@ -248,15 +254,15 @@ pub async fn get_champions(
     client: &Client,
     puuid: &str,
     region: &str,
-    riot_api_key: &str
-    ) -> Result<Vec<HashMap<String, Value>>, Error> {
-        let champions_url = format!(
+    riot_api_key: &str,
+) -> Result<Vec<HashMap<String, Value>>, Error> {
+    let champions_url = format!(
             "https://{}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{}/top?count=10&api_key={}",
             region, puuid, riot_api_key
         );
-        let response = client.get(&champions_url).send().await?;
-        Ok(response.json().await?)
-    }
+    let response = client.get(&champions_url).send().await?;
+    Ok(response.json().await?)
+}
 
 /// ⚙️ **Function**: Fetches the latest champion data from Data Dragon (Riot's official static data service).
 ///
@@ -292,16 +298,19 @@ pub async fn get_champions(
 ///   }
 /// }
 /// ```
-pub async fn open_dd_json(
-    ) -> Result<Value, Error> {
-        let dd_json = reqwest::get("https://ddragon.leagueoflegends.com/cdn/14.18.1/data/fr_FR/champion.json").await?.json().await?;
-        Ok(dd_json)
-    }
+pub async fn open_dd_json() -> Result<Value, Error> {
+    let dd_json =
+        reqwest::get("https://ddragon.leagueoflegends.com/cdn/14.18.1/data/fr_FR/champion.json")
+            .await?
+            .json()
+            .await?;
+    Ok(dd_json)
+}
 
 /// ⚙️ **Function**: Fetches detailed information about a specific match using the match ID.
 ///
-/// This function sends a request to the Riot API to retrieve detailed information about a match, such as 
-/// participants, game duration, result (win/loss), and other match-related statistics. The match data is returned 
+/// This function sends a request to the Riot API to retrieve detailed information about a match, such as
+/// participants, game duration, result (win/loss), and other match-related statistics. The match data is returned
 /// as a JSON object.
 ///
 /// # Parameters:
@@ -347,15 +356,14 @@ pub async fn open_dd_json(
 pub async fn get_matchs_info(
     client: &Client,
     match_id: &str,
-    riot_api_key: &str
-    ) -> Result<Value, Error> {
-        let matchs_info_url = format!(
-            "https://europe.api.riotgames.com/lol/match/v5/matches/{}?api_key={}",
-            match_id, riot_api_key
-        );
-        eprint!("Fetching match data from {}...\n", matchs_info_url);
-        let response = client.get(&matchs_info_url).send().await?;
-        let matchs_info: Value = response.json().await?;
-        Ok(matchs_info)
-    }
-
+    riot_api_key: &str,
+) -> Result<Value, Error> {
+    let matchs_info_url = format!(
+        "https://europe.api.riotgames.com/lol/match/v5/matches/{}?api_key={}",
+        match_id, riot_api_key
+    );
+    eprint!("Fetching match data from {}...\n", matchs_info_url);
+    let response = client.get(&matchs_info_url).send().await?;
+    let matchs_info: Value = response.json().await?;
+    Ok(matchs_info)
+}

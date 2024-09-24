@@ -1,14 +1,15 @@
-use std::collections::HashMap;
+use crate::embed::create_embed;
+use crate::models::constants::QUEUE_ID_MAP;
+use crate::models::data::{Data, EmojiId};
+use crate::models::error::Error;
+use crate::models::modal::LolStatsModal;
+use crate::riot_api::get_matchs_info;
+use crate::utils::{get_emoji, is_valid_game_mode, seconds_to_time, time_since_game_ended};
+use mongodb::Collection;
 use poise::CreateReply;
 use reqwest::Client;
 use serde_json::{Map, Value};
-use crate::models::data::Data;
-use crate::models::modal::LolStatsModal;
-use crate::models::error::Error;
-use crate::models::constants::QUEUE_ID_MAP;
-use crate::riot_api::get_matchs_info;
-use crate::utils::{is_valid_game_mode, seconds_to_time, time_since_game_ended};
-use crate::embed::create_embed;
+use std::collections::HashMap;
 
 /// ⚙️ **Function**: Fetches data and creates an embed displaying League of Legends player stats and match details.
 ///
@@ -58,24 +59,33 @@ pub async fn create_and_send_embed_lolstats(
     champions: Vec<HashMap<String, Value>>,
     match_ids: Vec<String>,
     ctx: &poise::ApplicationContext<'_, Data, Error>,
-    mongo_client: &mongodb::Client
-    ) -> CreateReply {
+    collection_emoji: Collection<EmojiId>,
+) -> CreateReply {
+    let dd_json = &ctx.data().dd_json;
+    let champions_data = dd_json["data"].as_object().unwrap();
 
-        let dd_json = &ctx.data().dd_json;
-        let champions_data = dd_json["data"].as_object().unwrap();
+    let solo_rank = extract_rank_info(solo_rank);
+    let flex_rank = extract_rank_info(flex_rank);
+    let champions_info =
+        extract_champions_info(champions, champions_data, collection_emoji.clone()).await;
+    let match_details = extract_match_info(match_ids, ctx, summoner_id).await;
 
-        let solo_rank = extract_rank_info(solo_rank);
-        let flex_rank = extract_rank_info(flex_rank);
-        let champions_info = extract_champions_info(champions, champions_data);
-        let match_details= extract_match_info(match_ids, ctx, summoner_id).await;
+    let embed = create_embed(
+        modal_data,
+        solo_rank,
+        flex_rank,
+        champions_info,
+        match_details,
+        collection_emoji.clone(),
+    )
+    .await
+    .unwrap();
 
-        let embed = create_embed(modal_data, solo_rank, flex_rank, champions_info, match_details, mongo_client).await.unwrap();
-
-        CreateReply {
-            embeds: vec![embed],
-            ..Default::default()
-        }
+    CreateReply {
+        embeds: vec![embed],
+        ..Default::default()
     }
+}
 
 /// ⚙️ **Function**: Extracts and returns League of Legends rank information.
 ///
@@ -118,28 +128,35 @@ pub async fn create_and_send_embed_lolstats(
 ///     "winrate": 57.14
 /// }
 /// ```
-fn extract_rank_info(
-    rank_data: &HashMap<String, Value>
-    ) -> Value {
-        let tier = rank_data.get("tier").and_then(|v| v.as_str()).unwrap_or("Unranked");
-        let division = rank_data.get("rank").and_then(|v| v.as_str()).unwrap_or("");
-        let lp = rank_data.get("leaguePoints").and_then(|v| v.as_i64()).unwrap_or(0);
-        let wins = rank_data.get("wins").and_then(|v| v.as_i64()).unwrap_or(0);
-        let losses = rank_data.get("losses").and_then(|v| v.as_i64()).unwrap_or(0);
-        let winrate = if wins + losses > 0 {
-            (wins as f64 / (wins + losses) as f64) * 100.0
-        } else {
-            0.0
-        };
-        return serde_json::json!({
-            "tier": tier,
-            "division": division,
-            "lp": lp,
-            "wins": wins,
-            "losses": losses,
-            "winrate": winrate
-        });
-    }
+fn extract_rank_info(rank_data: &HashMap<String, Value>) -> Value {
+    let tier = rank_data
+        .get("tier")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Unranked");
+    let division = rank_data.get("rank").and_then(|v| v.as_str()).unwrap_or("");
+    let lp = rank_data
+        .get("leaguePoints")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    let wins = rank_data.get("wins").and_then(|v| v.as_i64()).unwrap_or(0);
+    let losses = rank_data
+        .get("losses")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    let winrate = if wins + losses > 0 {
+        ((wins as f64) / ((wins + losses) as f64)) * 100.0
+    } else {
+        0.0
+    };
+    return serde_json::json!({
+        "tier": tier,
+        "division": division,
+        "lp": lp,
+        "wins": wins,
+        "losses": losses,
+        "winrate": winrate
+    });
+}
 
 /// ⚙️ **Function**: Extracts and formats champion information for display.
 ///
@@ -183,26 +200,44 @@ fn extract_rank_info(
 /// Zed - Level: 6 - Points: 98765
 /// Lee Sin - Level: 5 - Points: 54321
 /// ```
-fn extract_champions_info(
+async fn extract_champions_info(
     champions: Vec<HashMap<String, Value>>,
-    champions_data: &Map<String, Value>
-    ) -> String {
-        //CONNEXION ICI ENSUITE ON MET L'EMOJI A LA PLACE DU NOM DU CHAMP 
-        champions.iter().map(|champion| {
-            let champion_id = champion.get("championId").unwrap().as_i64().unwrap().to_string();
-            let champion_name = champions_data.values().find_map(|data| {
+    champions_data: &Map<String, Value>,
+    collection_emoji: Collection<EmojiId>,
+) -> String {
+    let mut champion_info_strings = Vec::new();
+
+    for champion in champions {
+        let champion_id = champion
+            .get("championId")
+            .unwrap()
+            .as_i64()
+            .unwrap()
+            .to_string();
+        let champion_name = champions_data
+            .values()
+            .find_map(|data| {
                 let champ = data.as_object().unwrap();
                 if champ.get("key").unwrap() == &Value::String(champion_id.clone()) {
                     Some(champ.get("id").unwrap().as_str().unwrap())
                 } else {
                     None
                 }
-            }).unwrap_or("Unknown Champion");
-            let champion_level = champion.get("championLevel").unwrap().as_i64().unwrap();
-            let champion_points = champion.get("championPoints").unwrap().as_i64().unwrap();
-            format!("{} - Level: {} - Points: {}", champion_name, champion_level, champion_points)
-        }).collect::<Vec<String>>().join("\n")
+            })
+            .unwrap_or("Unknown Champion");
+
+        let champion_level = champion.get("championLevel").unwrap().as_i64().unwrap();
+        let champion_points = champion.get("championPoints").unwrap().as_i64().unwrap();
+        let champion_emoji = get_emoji(collection_emoji.clone(), "champions", champion_name)
+            .await
+            .unwrap_or(champion_name.to_string());
+        champion_info_strings.push(format!(
+            "{} - Level: {} - Points: {}",
+            champion_emoji, champion_level, champion_points
+        ));
     }
+    champion_info_strings.join("\n")
+}
 
 /// ⚙️ **Function**: Extracts detailed information from recent League of Legends matches.
 ///
@@ -263,38 +298,48 @@ fn extract_champions_info(
 async fn extract_match_info(
     match_ids: Vec<String>,
     ctx: &poise::ApplicationContext<'_, Data, Error>,
-    summoner_id: String
-    ) ->Vec<Value> {
-        let mut match_details= Vec::<Value>::new();
-        for id in &match_ids {
-            let info = get_matchs_info(&Client::new(), id, &ctx.data().riot_api_key).await.unwrap();
-            let queue_id = info["info"]["queueId"].as_i64().unwrap_or(-1);
-            if is_valid_game_mode(queue_id){
-                let participants = info["info"]["participants"].as_array().unwrap();
-                if let Some(participant) = participants.iter().find(|p| p["summonerId"].as_str().unwrap() == summoner_id) {
-                    let champion_name = participant["championName"].as_str().unwrap_or("Unknown");
-                    let kills = participant["kills"].as_u64().unwrap_or(0);
-                    let deaths = participant["deaths"].as_u64().unwrap_or(0);
-                    let assists = participant["assists"].as_u64().unwrap_or(0);
-                    let total_farm = participant["totalMinionsKilled"].as_u64().unwrap_or(0) + participant["neutralMinionsKilled"].as_u64().unwrap_or(0);
-                    let win = participant["win"].as_bool().unwrap_or(false);
-                    let game_result = if win { "Victory" } else { "Defeat" };
-                    let game_duration = info["info"]["gameDuration"].as_u64().unwrap_or(0);
-                    let game_end_timestamp = info["info"]["gameEndTimestamp"].as_u64().unwrap_or(0);
-                    let time_since_game_ended = time_since_game_ended(game_end_timestamp);
-                    let (game_duration_minutes, game_duration_seconds) = seconds_to_time(game_duration);
-                    let game_type = QUEUE_ID_MAP.iter().find(|(id, _)| *id == queue_id).unwrap().1;
-                    match_details.push(serde_json::json!({
-                        "champion_name": champion_name,
-                        "K/D/A": format!("{}/{}/{}", kills, deaths, assists),
-                        "Farm": total_farm,
-                        "Result": game_result,
-                        "Duration": format!("{}:{}", game_duration_minutes, game_duration_seconds),
-                        "time_elapsed": time_since_game_ended,
-                        "game_type": game_type
-                    }));
-                }
+    summoner_id: String,
+) -> Vec<Value> {
+    let mut match_details = Vec::<Value>::new();
+    for id in &match_ids {
+        let info = get_matchs_info(&Client::new(), id, &ctx.data().riot_api_key)
+            .await
+            .unwrap();
+        let queue_id = info["info"]["queueId"].as_i64().unwrap_or(-1);
+        if is_valid_game_mode(queue_id) {
+            let participants = info["info"]["participants"].as_array().unwrap();
+            if let Some(participant) = participants
+                .iter()
+                .find(|p| p["summonerId"].as_str().unwrap() == summoner_id)
+            {
+                let champion_name = participant["championName"].as_str().unwrap_or("Unknown");
+                let kills = participant["kills"].as_u64().unwrap_or(0);
+                let deaths = participant["deaths"].as_u64().unwrap_or(0);
+                let assists = participant["assists"].as_u64().unwrap_or(0);
+                let total_farm = participant["totalMinionsKilled"].as_u64().unwrap_or(0)
+                    + participant["neutralMinionsKilled"].as_u64().unwrap_or(0);
+                let win = participant["win"].as_bool().unwrap_or(false);
+                let game_result = if win { "Victory" } else { "Defeat" };
+                let game_duration = info["info"]["gameDuration"].as_u64().unwrap_or(0);
+                let game_end_timestamp = info["info"]["gameEndTimestamp"].as_u64().unwrap_or(0);
+                let time_since_game_ended = time_since_game_ended(game_end_timestamp);
+                let (game_duration_minutes, game_duration_seconds) = seconds_to_time(game_duration);
+                let game_type = QUEUE_ID_MAP
+                    .iter()
+                    .find(|(id, _)| *id == queue_id)
+                    .unwrap()
+                    .1;
+                match_details.push(serde_json::json!({
+                    "champion_name": champion_name,
+                    "K/D/A": format!("{}/{}/{}", kills, deaths, assists),
+                    "Farm": total_farm,
+                    "Result": game_result,
+                    "Duration": format!("{}:{}", game_duration_minutes, game_duration_seconds),
+                    "time_elapsed": time_since_game_ended,
+                    "game_type": game_type
+                }));
             }
         }
-        match_details
     }
+    match_details
+}

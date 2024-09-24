@@ -1,15 +1,16 @@
-use poise::Modal;
-use reqwest::Client;
-use std::collections::HashMap;
-use crate::models::data::Data;
+use crate::embed::{create_embed_error, schedule_message_deletion};
+use crate::models::data::{Data, EmojiId};
 use crate::models::error::Error;
 use crate::models::modal::LolStatsModal;
 use crate::models::region::Region;
-use crate::riot_api::{get_puuid, get_summoner_id, get_rank_info, get_champions, get_matchs_id};
 use crate::module::lolstats::utils::create_and_send_embed_lolstats;
-use crate::embed::{create_embed_error, schedule_message_deletion};
+use crate::riot_api::{get_champions, get_matchs_id, get_puuid, get_rank_info, get_summoner_id};
 use crate::utils::{determine_solo_flex, region_to_string};
 use futures::join;
+use mongodb::Collection;
+use poise::Modal;
+use reqwest::Client;
+use std::collections::HashMap;
 
 /// Fetches and displays LoL player stats based on user input.
 ///
@@ -45,45 +46,51 @@ use futures::join;
 /// K/D/A: **10/2/8** | **200 CS** | Duration: **30:45**
 /// ⏳ Played: **2 hours ago**
 /// ```
-#[poise::command(
-    slash_command,
-)]
+#[poise::command(slash_command)]
 pub async fn lolstats(
     ctx: poise::ApplicationContext<'_, Data, Error>,
     #[description = "Select your region"] region: Region,
-    ) -> Result<(), Error> {
-        let modal_data: LolStatsModal = match LolStatsModal::execute(ctx).await {
-            Ok(Some(data)) => data,
-            Ok(None) => {
-                let error_message = "Modal data not found.";
-                let reply = ctx.send(create_embed_error(&error_message)).await?;
-                schedule_message_deletion(reply, ctx).await?;
-                return Ok(());
-            },
-            Err(_) => {
-                let error_message = "Failed to retrieve modal data.";
-                let reply = ctx.send(create_embed_error(&error_message)).await?;
-                schedule_message_deletion(reply, ctx).await?;
-                return Ok(());
-            },
-        };
+) -> Result<(), Error> {
+    let modal_data: LolStatsModal = match LolStatsModal::execute(ctx).await {
+        Ok(Some(data)) => data,
+        Ok(None) => {
+            let error_message = "Modal data not found.";
+            let reply = ctx.send(create_embed_error(&error_message)).await?;
+            schedule_message_deletion(reply, ctx).await?;
+            return Ok(());
+        }
+        Err(_) => {
+            let error_message = "Failed to retrieve modal data.";
+            let reply = ctx.send(create_embed_error(&error_message)).await?;
+            schedule_message_deletion(reply, ctx).await?;
+            return Ok(());
+        }
+    };
 
-        let client = Client::new();
-        let game_name_space = modal_data.game_name.replace(" ", "%20");
+    let client = Client::new();
+    let game_name_space = modal_data.game_name.replace(" ", "%20");
 
-        let region_str = region_to_string(&region);
+    let region_str = region_to_string(&region);
 
-        let puuid = match get_puuid(&client, &game_name_space, &modal_data.tag_line, &ctx.data().riot_api_key).await {
-            Ok(puuid) => puuid,
-            Err(e) => {
-                let error_message = format!("Error fetching PUUID: {}", e);
-                let reply = ctx.send(create_embed_error(&error_message)).await?;
-                schedule_message_deletion(reply, ctx).await?;
-                return Ok(());
-            }
-        };
+    let puuid = match get_puuid(
+        &client,
+        &game_name_space,
+        &modal_data.tag_line,
+        &ctx.data().riot_api_key,
+    )
+    .await
+    {
+        Ok(puuid) => puuid,
+        Err(e) => {
+            let error_message = format!("Error fetching PUUID: {}", e);
+            let reply = ctx.send(create_embed_error(&error_message)).await?;
+            schedule_message_deletion(reply, ctx).await?;
+            return Ok(());
+        }
+    };
 
-        let summoner_id = match get_summoner_id(&client, &region_str, &puuid, &ctx.data().riot_api_key).await {
+    let summoner_id =
+        match get_summoner_id(&client, &region_str, &puuid, &ctx.data().riot_api_key).await {
             Ok(id) => id,
             Err(e) => {
                 let error_message = format!("Error fetching summoner ID: {}", e);
@@ -93,56 +100,81 @@ pub async fn lolstats(
             }
         };
 
-        let (rank_info_res, champions_res, match_ids_res) = join!(
-            get_rank_info(&client, &region_str, &summoner_id, &ctx.data().riot_api_key),
-            get_champions(&client, &puuid, &region_str, &ctx.data().riot_api_key),
-            get_matchs_id(&client, &puuid, &ctx.data().riot_api_key, 5)
-        );
+    let (rank_info_res, champions_res, match_ids_res) = join!(
+        get_rank_info(&client, &region_str, &summoner_id, &ctx.data().riot_api_key),
+        get_champions(&client, &puuid, &region_str, &ctx.data().riot_api_key),
+        get_matchs_id(&client, &puuid, &ctx.data().riot_api_key, 5)
+    );
 
-        let rank_info = match rank_info_res {
-            Ok(info) => info,
-            Err(e) => {
-                let error_message = format!("Error fetching rank info: {}", e);
-                let reply = ctx.send(create_embed_error(&error_message)).await?;
-                schedule_message_deletion(reply, ctx).await?;
-                return Ok(());
-            }
-        };
-
-        let champions = match champions_res {
-            Ok(champs) => champs,
-            Err(e) => {
-                let error_message = format!("Error fetching champions: {}", e);
-                let reply = ctx.send(create_embed_error(&error_message)).await?;
-                schedule_message_deletion(reply, ctx).await?;
-                return Ok(());
-            }
-        };
-
-        let match_ids = match match_ids_res {
-            Ok(ids) => ids,
-            Err(e) => {
-                let error_message = format!("Error fetching match IDs: {}", e);
-                let reply = ctx.send(create_embed_error(&error_message)).await?;
-                schedule_message_deletion(reply, ctx).await?;
-                return Ok(()); // Retourne Ok(()) pour terminer proprement
-            }
-        };
-
-        let mut default_rank = HashMap::new();
-        default_rank.insert("tier".to_string(), serde_json::Value::String("Unranked".to_string()));
-        default_rank.insert("rank".to_string(), serde_json::Value::String("".to_string()));
-        default_rank.insert("leaguePoints".to_string(), serde_json::Value::Number(0.into()));
-        default_rank.insert("wins".to_string(), serde_json::Value::Number(0.into()));
-        default_rank.insert("losses".to_string(), serde_json::Value::Number(0.into()));
-        default_rank.insert("queueType".to_string(), serde_json::Value::String("".to_string()));
-
-        let (solo_rank, flex_rank) = determine_solo_flex(&rank_info, &default_rank);
-        let mongo_client: &mongodb::Client = &ctx.data().mongo_client;
-        let reply = create_and_send_embed_lolstats(&modal_data, summoner_id, &solo_rank, &flex_rank, champions, match_ids, &ctx, mongo_client).await;
-        let sent_message = ctx.send(reply).await?;
-        if let Err(e) = schedule_message_deletion(sent_message, ctx).await {
-            eprintln!("Failed to schedule message deletion: {}", e);
+    let rank_info = match rank_info_res {
+        Ok(info) => info,
+        Err(e) => {
+            let error_message = format!("Error fetching rank info: {}", e);
+            let reply = ctx.send(create_embed_error(&error_message)).await?;
+            schedule_message_deletion(reply, ctx).await?;
+            return Ok(());
         }
-        Ok(())
+    };
+
+    let champions = match champions_res {
+        Ok(champs) => champs,
+        Err(e) => {
+            let error_message = format!("Error fetching champions: {}", e);
+            let reply = ctx.send(create_embed_error(&error_message)).await?;
+            schedule_message_deletion(reply, ctx).await?;
+            return Ok(());
+        }
+    };
+
+    let match_ids = match match_ids_res {
+        Ok(ids) => ids,
+        Err(e) => {
+            let error_message = format!("Error fetching match IDs: {}", e);
+            let reply = ctx.send(create_embed_error(&error_message)).await?;
+            schedule_message_deletion(reply, ctx).await?;
+            return Ok(()); // Retourne Ok(()) pour terminer proprement
+        }
+    };
+
+    let mut default_rank = HashMap::new();
+    default_rank.insert(
+        "tier".to_string(),
+        serde_json::Value::String("Unranked".to_string()),
+    );
+    default_rank.insert(
+        "rank".to_string(),
+        serde_json::Value::String("".to_string()),
+    );
+    default_rank.insert(
+        "leaguePoints".to_string(),
+        serde_json::Value::Number(0.into()),
+    );
+    default_rank.insert("wins".to_string(), serde_json::Value::Number(0.into()));
+    default_rank.insert("losses".to_string(), serde_json::Value::Number(0.into()));
+    default_rank.insert(
+        "queueType".to_string(),
+        serde_json::Value::String("".to_string()),
+    );
+
+    let (solo_rank, flex_rank) = determine_solo_flex(&rank_info, &default_rank);
+    let mongo_client: &mongodb::Client = &ctx.data().mongo_client;
+    let collection_emoji = mongo_client
+        .database("stat-summoner")
+        .collection::<EmojiId>("emojis_id");
+    let reply = create_and_send_embed_lolstats(
+        &modal_data,
+        summoner_id,
+        &solo_rank,
+        &flex_rank,
+        champions,
+        match_ids,
+        &ctx,
+        collection_emoji,
+    )
+    .await;
+    let sent_message = ctx.send(reply).await?;
+    if let Err(e) = schedule_message_deletion(sent_message, ctx).await {
+        eprintln!("Failed to schedule message deletion: {}", e);
     }
+    Ok(())
+}

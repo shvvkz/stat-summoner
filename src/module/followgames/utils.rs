@@ -1,10 +1,9 @@
-
 use crate::embed::schedule_message_deletion;
+use crate::embed::{create_embed_error, create_embed_sucess};
 use crate::models::data::{Data, SummonerFollowedData};
 use crate::models::error::Error;
 use crate::models::modal::FollowGamesModal;
 use mongodb::bson::doc;
-use crate::embed::{create_embed_error, create_embed_sucess};
 
 /// ⚙️ **Function**: Adds a summoner to the database for game follow-up if they are not already being followed.
 ///
@@ -45,17 +44,18 @@ pub async fn check_and_add_in_db(
     summoner_id: String,
     match_id: String,
     time_end_follow: String,
-    ) -> Result<(), Error> {
+) -> Result<(), Error> {
     match collection.find_one(doc! { "puuid": puuid.clone() }).await {
         Ok(Some(_followed_summoner)) => {
             let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0).to_string();
             if _followed_summoner.guild_id == guild_id {
                 match collection
-                .update_one(
-                    doc! { "puuid": puuid.clone(), "guild_id": guild_id },
-                    doc! { "$set": { "time_end_follow": time_end_follow.clone() } }
-                )
-                .await{
+                    .update_one(
+                        doc! { "puuid": puuid.clone(), "guild_id": guild_id },
+                        doc! { "$set": { "time_end_follow": time_end_follow.clone() } },
+                    )
+                    .await
+                {
                     Ok(_) => {
                         let success_message = "tracking time has been updated.";
                         let reply = ctx.send(create_embed_sucess(&success_message)).await?;
@@ -69,8 +69,7 @@ pub async fn check_and_add_in_db(
                         return Ok(());
                     }
                 }
-            }
-            else{
+            } else {
                 let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0).to_string();
                 let channel_id = ctx.channel_id().get();
                 let new_followed_summoner = SummonerFollowedData {
@@ -82,7 +81,7 @@ pub async fn check_and_add_in_db(
                     last_match_id: match_id.clone(),
                     time_end_follow: time_end_follow.clone(),
                     channel_id: channel_id,
-                    guild_id: guild_id
+                    guild_id: guild_id,
                 };
                 match collection.insert_one(new_followed_summoner).await {
                     Ok(_) => {
@@ -112,7 +111,7 @@ pub async fn check_and_add_in_db(
                 last_match_id: match_id.clone(),
                 time_end_follow: time_end_follow.clone(),
                 channel_id: channel_id,
-                guild_id: guild_id
+                guild_id: guild_id,
             };
             match collection.insert_one(new_followed_summoner).await {
                 Ok(_) => {
@@ -137,4 +136,3 @@ pub async fn check_and_add_in_db(
         }
     }
 }
-

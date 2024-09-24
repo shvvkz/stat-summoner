@@ -1,14 +1,13 @@
-
+use crate::models::data::SummonerFollowedData;
+use crate::models::error::Error;
 use chrono::{Duration, Utc};
+use futures::StreamExt;
 use mongodb::bson::doc;
 use mongodb::Collection;
 use poise::serenity_prelude::{CreateEmbed, CreateEmbedFooter};
 use poise::CreateReply;
 use serde_json::json;
 use serde_json::Value;
-use futures::StreamExt;
-use crate::models::data::SummonerFollowedData;
-use crate::models::error::Error;
 
 /// ⚙️ **Function**: Fetches the list of summoners followed in a specific Discord guild.
 ///
@@ -57,33 +56,31 @@ use crate::models::error::Error;
 pub async fn get_data_followed_summoner(
     collection: Collection<SummonerFollowedData>,
     guild_id: String,
-    ) -> Result<Value, Error> {
-        let current_timestamp = Utc::now().timestamp();
-        let mut cursor = collection
-            .find(doc! { "guild_id": guild_id })
-            .await?;
-        let mut summoners = Vec::new();
-        while let Some(followed_data) = cursor.next().await {
-            if let Ok(data) = followed_data {
-                let name = &data.name;
-                let time_end_follow = data.time_end_follow.parse::<i64>().unwrap();
+) -> Result<Value, Error> {
+    let current_timestamp = Utc::now().timestamp();
+    let mut cursor = collection.find(doc! { "guild_id": guild_id }).await?;
+    let mut summoners = Vec::new();
+    while let Some(followed_data) = cursor.next().await {
+        if let Ok(data) = followed_data {
+            let name = &data.name;
+            let time_end_follow = data.time_end_follow.parse::<i64>().unwrap();
 
-                let remaining_duration = time_end_follow - current_timestamp;
-                let time_remaining_str = if remaining_duration > 0 {
-                    let duration = Duration::seconds(remaining_duration);
-                    format_duration(duration)
-                } else {
-                    "Follow ended".to_string()
-                };
-                let summoner = json!({
-                    "name": name,
-                    "time_remaining": time_remaining_str
-                });
-                summoners.push(summoner);
-            }
+            let remaining_duration = time_end_follow - current_timestamp;
+            let time_remaining_str = if remaining_duration > 0 {
+                let duration = Duration::seconds(remaining_duration);
+                format_duration(duration)
+            } else {
+                "Follow ended".to_string()
+            };
+            let summoner = json!({
+                "name": name,
+                "time_remaining": time_remaining_str
+            });
+            summoners.push(summoner);
         }
-        Ok(json!({ "tracked_summoners": summoners }))
     }
+    Ok(json!({ "tracked_summoners": summoners }))
+}
 
 /// ⚙️ **Function**: Formats a `Duration` into a human-readable string.
 ///
@@ -120,40 +117,37 @@ pub async fn get_data_followed_summoner(
 ///
 /// The function will return the appropriate formatted string based on the duration passed in.
 
-fn format_duration(
-    duration: Duration
-    ) -> String {
-        let days = duration.num_days();
-        let hours = duration.num_hours() % 24;
-        let minutes = duration.num_minutes() % 60;
+fn format_duration(duration: Duration) -> String {
+    let days = duration.num_days();
+    let hours = duration.num_hours() % 24;
+    let minutes = duration.num_minutes() % 60;
 
-        if days > 0 {
-            if hours > 0 {
-                if hours == 1 {
-                    return format!("in 1 day and 1 hour");
-                } else {
-                    return format!("in 1 day and {} hours", hours);
-                }
-            } else {
-                return format!("in 1 day");
-            }
-        } else if hours > 0 {
+    if days > 0 {
+        if hours > 0 {
             if hours == 1 {
-                return format!("in 1 hour");
+                return format!("in 1 day and 1 hour");
             } else {
-                return format!("in {} hours", hours);
-            }
-        } else if minutes > 0 {
-            if minutes == 1 {
-                return format!("in 1 minute");
-            } else {
-                return format!("in {} minutes", minutes);
+                return format!("in 1 day and {} hours", hours);
             }
         } else {
-            return "less than a minute".to_string();
+            return format!("in 1 day");
         }
+    } else if hours > 0 {
+        if hours == 1 {
+            return format!("in 1 hour");
+        } else {
+            return format!("in {} hours", hours);
+        }
+    } else if minutes > 0 {
+        if minutes == 1 {
+            return format!("in 1 minute");
+        } else {
+            return format!("in {} minutes", minutes);
+        }
+    } else {
+        return "less than a minute".to_string();
     }
-
+}
 
 /// ⚙️ **Function**: Creates an embed displaying the list of followed summoners.
 ///
@@ -193,37 +187,36 @@ fn format_duration(
 /// ```
 ///
 /// This example would produce an embed listing two summoners, with their remaining follow durations.
-pub fn create_embed_followed_summoner(
-    data: Value
-    ) -> CreateReply {
-        let binding = vec![];
-        let tracked_summoners = data["tracked_summoners"].as_array().unwrap_or(&binding);
-        let mut embed = CreateEmbed::new().title("Tracked Summoners").color(0xA020F0).footer(CreateEmbedFooter::new("This message will be deleted in 60 seconds."));
+pub fn create_embed_followed_summoner(data: Value) -> CreateReply {
+    let binding = vec![];
+    let tracked_summoners = data["tracked_summoners"].as_array().unwrap_or(&binding);
+    let mut embed = CreateEmbed::new()
+        .title("Tracked Summoners")
+        .color(0xA020F0)
+        .footer(CreateEmbedFooter::new(
+            "This message will be deleted in 60 seconds.",
+        ));
 
-        if tracked_summoners.is_empty(){
-            embed = embed.field(
-                "",
-                "No summoners are currently being followed".to_string(),
-                false
-            );
-            return CreateReply{
-                embeds: vec![embed],
-                ..Default::default()
-            }
-        }
-        for summoner in tracked_summoners {
-            let name = summoner["name"].as_str().unwrap_or("Unknown");
-            let time_remaining = summoner["time_remaining"].as_str().unwrap_or("Unknown");
-
-            embed = embed.field(
-                name,
-                format!("Follow ends in: {}", time_remaining),
-                false,
-            );
-        }
-
-        CreateReply {
+    if tracked_summoners.is_empty() {
+        embed = embed.field(
+            "",
+            "No summoners are currently being followed".to_string(),
+            false,
+        );
+        return CreateReply {
             embeds: vec![embed],
             ..Default::default()
-        }
+        };
     }
+    for summoner in tracked_summoners {
+        let name = summoner["name"].as_str().unwrap_or("Unknown");
+        let time_remaining = summoner["time_remaining"].as_str().unwrap_or("Unknown");
+
+        embed = embed.field(name, format!("Follow ends in: {}", time_remaining), false);
+    }
+
+    CreateReply {
+        embeds: vec![embed],
+        ..Default::default()
+    }
+}

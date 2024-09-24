@@ -1,8 +1,10 @@
-use mongodb::bson::doc;
 use crate::embed::schedule_message_deletion;
 use crate::models::data::{Data, SummonerFollowedData};
 use crate::models::error::Error;
-use crate::module::whoisfollowed::utils::{get_data_followed_summoner, create_embed_followed_summoner};
+use crate::module::whoisfollowed::utils::{
+    create_embed_followed_summoner, get_data_followed_summoner,
+};
+use mongodb::bson::doc;
 
 /// Retrieves and displays the list of summoners followed in the current Discord guild.
 ///
@@ -45,20 +47,18 @@ use crate::module::whoisfollowed::utils::{get_data_followed_summoner, create_emb
 /// ```
 ///
 /// This command will create an embed showing all followed summoners in the guild where the command is run, along with their remaining follow time.
-#[poise::command(
-    slash_command,
-)]
-pub async fn whoisfollowed(
-    ctx: poise::ApplicationContext<'_, Data, Error>,
-    ) -> Result<(), Error> {
-        let mongo_client = &ctx.data().mongo_client;
-        let collection = mongo_client
-            .database("stat-summoner")
-            .collection::<SummonerFollowedData>("follower_summoner");
+#[poise::command(slash_command)]
+pub async fn whoisfollowed(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(), Error> {
+    let mongo_client = &ctx.data().mongo_client;
+    let collection = mongo_client
+        .database("stat-summoner")
+        .collection::<SummonerFollowedData>("follower_summoner");
 
-        let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0).to_string();
-        let followed_data = get_data_followed_summoner(collection, guild_id).await?;
-        let reply = ctx.send(create_embed_followed_summoner(followed_data)).await?;
-        schedule_message_deletion(reply, ctx).await?;
-        return Ok(());
-    }
+    let guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(0).to_string();
+    let followed_data = get_data_followed_summoner(collection, guild_id).await?;
+    let reply = ctx
+        .send(create_embed_followed_summoner(followed_data))
+        .await?;
+    schedule_message_deletion(reply, ctx).await?;
+    return Ok(());
+}

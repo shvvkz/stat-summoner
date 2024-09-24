@@ -1,13 +1,18 @@
-use poise::{serenity_prelude::{self as serenity}, CreateReply};
-use serde_json::Value;
-use crate::{models::data::Data, utils::get_emoji};
-use crate::models::modal::LolStatsModal;
 use crate::models::error::Error;
+use crate::models::modal::LolStatsModal;
+use crate::{
+    models::data::{Data, EmojiId},
+    utils::get_emoji,
+};
+use mongodb::Collection;
+use poise::ReplyHandle;
+use poise::{
+    serenity_prelude::{self as serenity},
+    CreateReply,
+};
+use serde_json::Value;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 use tokio::time::{sleep, Duration};
-use poise::ReplyHandle;
-
-
 
 /// ⚙️ **Function**: Creates a rich embed message displaying League of Legends player stats and match details.
 ///
@@ -53,57 +58,89 @@ pub async fn create_embed(
     flex_rank: Value,
     champions_info: String,
     match_details: Vec<Value>,
-    mongo_client: &mongodb::Client
-    ) -> Result<CreateEmbed, Error> {
-    
-        // Récupérer les émojis pour le rang solo et flex
-        let solo_rank_tier = solo_rank["tier"].as_str().unwrap_or("Unknown");
-        let solo_emoji = get_emoji(mongo_client, "rank", solo_rank_tier).await.unwrap_or(solo_rank_tier.to_string());
-        println!("{}",solo_emoji);
-    
-        let flex_rank_tier = flex_rank["tier"].as_str().unwrap_or("Unknown");
-        let flex_emoji = get_emoji(mongo_client, "rank", flex_rank_tier).await.unwrap_or(flex_rank_tier.to_string());
-    
-        // Construction de la chaîne du rang Solo/Duo
-        let solo_rank_str = if solo_rank["lp"].as_i64().unwrap_or(0) > 0 {
-            if !solo_rank["division"].as_str().unwrap_or("").is_empty() {
-                format!("**{} {}** - {} LP", solo_emoji, solo_rank["division"].as_str().unwrap(), solo_rank["lp"].as_i64().unwrap())
-            } else {
-                format!("**{}** - {} LP", solo_emoji, solo_rank["lp"].as_i64().unwrap())
-            }
+    collection_emoji: Collection<EmojiId>,
+) -> Result<CreateEmbed, Error> {
+    // Récupérer les émojis pour le rang solo et flex
+    let solo_rank_tier = solo_rank["tier"].as_str().unwrap_or("Unknown");
+    let solo_emoji = get_emoji(collection_emoji.clone(), "rank", solo_rank_tier)
+        .await
+        .unwrap_or(solo_rank_tier.to_string());
+    println!("{}", solo_emoji);
+
+    let flex_rank_tier = flex_rank["tier"].as_str().unwrap_or("Unknown");
+    let flex_emoji = get_emoji(collection_emoji.clone(), "rank", flex_rank_tier)
+        .await
+        .unwrap_or(flex_rank_tier.to_string());
+
+    // Construction de la chaîne du rang Solo/Duo
+    let solo_rank_str = if solo_rank["lp"].as_i64().unwrap_or(0) > 0 {
+        if !solo_rank["division"].as_str().unwrap_or("").is_empty() {
+            format!(
+                "**{} {}** - {} LP",
+                solo_emoji,
+                solo_rank["division"].as_str().unwrap(),
+                solo_rank["lp"].as_i64().unwrap()
+            )
         } else {
-            format!("**{}**", solo_emoji)
-        };
-    
-        // Construction de la chaîne du rang Flex
-        let flex_rank_str = if flex_rank["lp"].as_i64().unwrap_or(0) > 0 {
-            if !flex_rank["division"].as_str().unwrap_or("").is_empty() {
-                format!("**{} {}** ({} LP)", flex_emoji, flex_rank["division"].as_str().unwrap(), flex_rank["lp"].as_i64().unwrap())
-            } else {
-                format!("**{}** ({} LP)", flex_emoji, flex_rank["lp"].as_i64().unwrap())
-            }
+            format!(
+                "**{}** - {} LP",
+                solo_emoji,
+                solo_rank["lp"].as_i64().unwrap()
+            )
+        }
+    } else {
+        format!("**{}**", solo_emoji)
+    };
+
+    // Construction de la chaîne du rang Flex
+    let flex_rank_str = if flex_rank["lp"].as_i64().unwrap_or(0) > 0 {
+        if !flex_rank["division"].as_str().unwrap_or("").is_empty() {
+            format!(
+                "**{} {}** ({} LP)",
+                flex_emoji,
+                flex_rank["division"].as_str().unwrap(),
+                flex_rank["lp"].as_i64().unwrap()
+            )
         } else {
-            format!("**{}**", flex_emoji)
-        };
-    
-        // Construction de l'embed
-        let embed = CreateEmbed::default()
-            .title(format!("📊 Stats for **{}#{}**", modal_data.game_name, modal_data.tag_line))
-            .color(0x00ff00)
-            .field("**Solo/Duo Rank**", solo_rank_str, false)
-            .field("🏆 **Wins**", format!("**{}**", solo_rank["wins"].as_i64().unwrap_or(-1)), true)
-            .field("❌ **Losses**", format!("**{}**", solo_rank["losses"].as_i64().unwrap_or(-1)), true)
-            .field("📊 **Winrate**", format!("**{:.2}%**", solo_rank["winrate"].as_f64().unwrap_or(-1.0)), true)
-            .field("**Flex Rank**", flex_rank_str, false)
-            .field("🏆 **Wins**", format!("**{}**", flex_rank["wins"].as_i64().unwrap_or(-1)), true)
-            .field("❌ **Losses**", format!("**{}**", flex_rank["losses"].as_i64().unwrap_or(-1)), true)
-            .field("📊 **Winrate**", format!("**{:.2}%**", flex_rank["winrate"].as_f64().unwrap_or(-1.0)), true)
-            .field("💥 **Top Champions**", champions_info, false)
-            .field("📜 **Match Details**",
-                if match_details.is_empty() {
-                    "No match found on Normal and ranked game".to_string()
-                } else {
-                    match_details.iter().map(|match_detail| {
+            format!(
+                "**{}** ({} LP)",
+                flex_emoji,
+                flex_rank["lp"].as_i64().unwrap()
+            )
+        }
+    } else {
+        format!("**{}**", flex_emoji)
+    };
+
+    // Construction de l'embed
+    let embed = CreateEmbed::default()
+        .title(format!("📊 Stats for **{}#{}**", modal_data.game_name, modal_data.tag_line))
+        .color(0x00ff00)
+        .field("**Solo/Duo Rank**", solo_rank_str, false)
+        .field("🏆 **Wins**", format!("**{}**", solo_rank["wins"].as_i64().unwrap_or(-1)), true)
+        .field("❌ **Losses**", format!("**{}**", solo_rank["losses"].as_i64().unwrap_or(-1)), true)
+        .field(
+            "📊 **Winrate**",
+            format!("**{:.2}%**", solo_rank["winrate"].as_f64().unwrap_or(-1.0)),
+            true
+        )
+        .field("**Flex Rank**", flex_rank_str, false)
+        .field("🏆 **Wins**", format!("**{}**", flex_rank["wins"].as_i64().unwrap_or(-1)), true)
+        .field("❌ **Losses**", format!("**{}**", flex_rank["losses"].as_i64().unwrap_or(-1)), true)
+        .field(
+            "📊 **Winrate**",
+            format!("**{:.2}%**", flex_rank["winrate"].as_f64().unwrap_or(-1.0)),
+            true
+        )
+        .field("💥 **Top Champions**", champions_info, false)
+        .field(
+            "📜 **Match Details**",
+            if match_details.is_empty() {
+                "No match found on Normal and ranked game".to_string()
+            } else {
+                match_details
+                    .iter()
+                    .map(|match_detail| {
                         format!(
                             "{} - **{}**, {} ({}):\nK/D/A: **{}** | **{} CS** | Duration: **{}**\n⏳ Played: **{}**\n\n",
                             match_detail.get("Result").unwrap().as_str().unwrap(),
@@ -115,26 +152,26 @@ pub async fn create_embed(
                             match_detail.get("Duration").unwrap().as_str().unwrap(),
                             match_detail.get("time_elapsed").unwrap().as_str().unwrap()
                         )
-                    }).collect::<String>()
-                },
-                false
-            )
-            .footer(CreateEmbedFooter::new("This message will be deleted in 60 seconds."));
-        
-        Ok(embed)
-    }
+                    })
+                    .collect::<String>()
+            },
+            false
+        )
+        .footer(CreateEmbedFooter::new("This message will be deleted in 60 seconds."))
+        .thumbnail("https://i.postimg.cc/VL3pc27P/Frame-102-1.png");
 
-
+    Ok(embed)
+}
 
 /// ⚙️ **Function**: Creates an embed displaying an error message for Discord interactions.
-/// 
-/// This function constructs a Discord embed message that displays a given error message in a formatted way. 
+///
+/// This function constructs a Discord embed message that displays a given error message in a formatted way.
 /// The embed is styled with a red color to indicate an error and includes a default title of "Error".
 /// The embed is returned as part of a `CreateReply`, which can be sent to a Discord channel.
 ///
 /// # Parameters:
 /// - `error_message`: A string slice containing the error message to be displayed in the embed's description.
-///   This message is intended to provide feedback to the user, typically in case of API errors, invalid inputs, 
+///   This message is intended to provide feedback to the user, typically in case of API errors, invalid inputs,
 ///   or other issues encountered during the bot's execution.
 ///
 /// # Returns:
@@ -143,7 +180,7 @@ pub async fn create_embed(
 /// # ⚠️ Notes:
 /// - The embed's color is set to red (`0xff0000`) to visually signify an error.
 /// - The title of the embed is always set to "Error", and the provided `error_message` is used in the description.
-/// - The function is primarily used to provide user-friendly error messages in response to invalid inputs 
+/// - The function is primarily used to provide user-friendly error messages in response to invalid inputs
 ///   or issues in API calls.
 ///
 /// # Example:
@@ -157,19 +194,19 @@ pub async fn create_embed(
 /// ❌ **Error**
 /// Failed to fetch data from the Riot API.
 /// ```
-pub fn create_embed_error(
-    error_message: &str
-    ) -> CreateReply {
-        let embed : CreateEmbed = CreateEmbed::default()
-            .title("Error")
-            .description(error_message)
-            .color(0xff0000)
-            .footer(CreateEmbedFooter::new("This message will be deleted in 60 seconds."));
-        CreateReply {
-            embeds: vec![embed],
-            ..Default::default()
-        }
+pub fn create_embed_error(error_message: &str) -> CreateReply {
+    let embed: CreateEmbed = CreateEmbed::default()
+        .title("Error")
+        .description(error_message)
+        .color(0xff0000)
+        .footer(CreateEmbedFooter::new(
+            "This message will be deleted in 60 seconds.",
+        ));
+    CreateReply {
+        embeds: vec![embed],
+        ..Default::default()
     }
+}
 
 /// ⚙️ **Function**: Creates a success embed reply for Discord messages.
 ///
@@ -193,19 +230,19 @@ pub fn create_embed_error(
 /// let reply = create_embed_sucess("Operation completed successfully!");
 /// // Use `reply` to send the embed in a Discord channel
 /// ```
-pub fn create_embed_sucess(
-    sucess_message: &str
-    ) -> CreateReply {
-        let embed : CreateEmbed = CreateEmbed::default()
-            .title("Sucess")
-            .description(sucess_message)
-            .color(0x00ff00)
-            .footer(CreateEmbedFooter::new("This message will be deleted in 60 seconds."));
-        CreateReply {
-            embeds: vec![embed],
-            ..Default::default()
-        }
+pub fn create_embed_sucess(sucess_message: &str) -> CreateReply {
+    let embed: CreateEmbed = CreateEmbed::default()
+        .title("Sucess")
+        .description(sucess_message)
+        .color(0x00ff00)
+        .footer(CreateEmbedFooter::new(
+            "This message will be deleted in 60 seconds.",
+        ));
+    CreateReply {
+        embeds: vec![embed],
+        ..Default::default()
     }
+}
 
 /// ⚙️ **Function**: Schedules the deletion of a Discord message after a delay.
 ///
@@ -237,13 +274,11 @@ pub fn create_embed_sucess(
 /// After 60 seconds, the message will be deleted from the Discord channel.
 pub async fn schedule_message_deletion(
     sent_message: ReplyHandle<'_>,
-    ctx: poise::ApplicationContext<'_, Data, Error>
-    ) -> Result<(), Error> {
-        sleep(Duration::from_secs(60)).await;
-        if let Ok(sent_msg) = sent_message.message().await {
-            sent_msg.delete(&ctx.serenity_context().http).await?;
-        }
-        Ok(())
+    ctx: poise::ApplicationContext<'_, Data, Error>,
+) -> Result<(), Error> {
+    sleep(Duration::from_secs(60)).await;
+    if let Ok(sent_msg) = sent_message.message().await {
+        sent_msg.delete(&ctx.serenity_context().http).await?;
     }
-
-
+    Ok(())
+}

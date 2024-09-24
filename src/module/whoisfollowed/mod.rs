@@ -1,3 +1,4 @@
+pub mod utils;
 /// 🛠 **Module commands**: Contains all bot commands for the Discord bot.
 ///
 /// This module organizes the different commands used by the bot. Each command is stored in its own file
@@ -27,4 +28,3 @@
 ///
 /// As more commands are added, they will be included here and imported into the main bot setup.
 pub mod whoisfollowed;
-pub mod utils;

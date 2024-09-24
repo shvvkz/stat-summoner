@@ -1,15 +1,15 @@
-use chrono::{Utc, NaiveDateTime};
-use mongodb::bson::doc;
-use mongodb::{Client, Collection};
-use crate::models::data::EmojiId;
-use serde::de::value::Error;
 use crate::models::constants::QUEUE_ID_MAP;
+use crate::models::data::EmojiId;
 use crate::models::region::Region;
+use chrono::{NaiveDateTime, Utc};
+use mongodb::bson::doc;
+use mongodb::Collection;
+use serde::de::value::Error;
 use std::collections::HashMap;
 
 /// ⚙️ **Function**: Checks if a given queue ID corresponds to a valid game mode.
 ///
-/// This function verifies if the provided `queue_id` matches any valid game modes listed in the `QUEUE_ID_MAP`. 
+/// This function verifies if the provided `queue_id` matches any valid game modes listed in the `QUEUE_ID_MAP`.
 /// The `QUEUE_ID_MAP` contains a predefined set of game modes such as ranked, normal, and ARAM.
 ///
 /// # Parameters:
@@ -34,15 +34,13 @@ use std::collections::HashMap;
 /// ```text
 /// true
 /// ```
-pub fn is_valid_game_mode(
-    queue_id: i64
-    ) -> bool {
-        QUEUE_ID_MAP.iter().any(|&(id, _)| id == queue_id)
-    }
+pub fn is_valid_game_mode(queue_id: i64) -> bool {
+    QUEUE_ID_MAP.iter().any(|&(id, _)| id == queue_id)
+}
 
 /// ⚙️ **Function**: Calculates the time elapsed since a game ended and returns it as a human-readable string.
 ///
-/// This function computes the duration between the game's end timestamp and the current time. It returns a string 
+/// This function computes the duration between the game's end timestamp and the current time. It returns a string
 /// representing how much time has passed, formatted in seconds, minutes, hours, days, months, or years, depending on the duration.
 ///
 /// # Parameters:
@@ -67,33 +65,31 @@ pub fn is_valid_game_mode(
 /// "5 days ago"
 /// "1 year ago"
 /// ```
-pub fn time_since_game_ended(
-    game_end_timestamp: u64
-    ) -> String {
-        let game_end_time = NaiveDateTime::from_timestamp_opt((game_end_timestamp / 1000) as i64, 0)
-            .expect("Invalid timestamp");
-        let now = Utc::now().naive_utc();
-        let duration = now.signed_duration_since(game_end_time);
+pub fn time_since_game_ended(game_end_timestamp: u64) -> String {
+    let game_end_time = NaiveDateTime::from_timestamp_opt((game_end_timestamp / 1000) as i64, 0)
+        .expect("Invalid timestamp");
+    let now = Utc::now().naive_utc();
+    let duration = now.signed_duration_since(game_end_time);
 
-        if duration.num_seconds() < 60 {
-            format!("{} seconds ago", duration.num_seconds())
-        } else if duration.num_minutes() < 60 {
-            format!("{} minutes ago", duration.num_minutes())
-        } else if duration.num_hours() < 24 {
-            format!("{} hours ago", duration.num_hours())
-        } else if duration.num_days() < 30 {
-            format!("{} days ago", duration.num_days())
-        } else if duration.num_days() < 365 {
-            format!("{} months ago", duration.num_days() / 30)
-        } else {
-            format!("{} years ago", duration.num_days() / 365)
-        }
+    if duration.num_seconds() < 60 {
+        format!("{} seconds ago", duration.num_seconds())
+    } else if duration.num_minutes() < 60 {
+        format!("{} minutes ago", duration.num_minutes())
+    } else if duration.num_hours() < 24 {
+        format!("{} hours ago", duration.num_hours())
+    } else if duration.num_days() < 30 {
+        format!("{} days ago", duration.num_days())
+    } else if duration.num_days() < 365 {
+        format!("{} months ago", duration.num_days() / 30)
+    } else {
+        format!("{} years ago", duration.num_days() / 365)
     }
+}
 
 /// ⚙️ **Function**: Determines Solo/Duo and Flex ranks from rank information.
 ///
-/// This function analyzes a list of rank information and determines the Solo/Duo and Flex ranks based on the provided data. 
-/// It checks the `queueType` field in the rank data to distinguish between Solo/Duo and Flex ranks. If no rank data is available 
+/// This function analyzes a list of rank information and determines the Solo/Duo and Flex ranks based on the provided data.
+/// It checks the `queueType` field in the rank data to distinguish between Solo/Duo and Flex ranks. If no rank data is available
 /// for a specific queue, it returns a default rank.
 ///
 /// # Parameters:
@@ -126,17 +122,27 @@ pub fn time_since_game_ended(
 pub fn determine_solo_flex(
     rank_info: &Vec<HashMap<String, serde_json::Value>>,
     default_rank: &HashMap<String, serde_json::Value>,
-    ) -> (HashMap<String, serde_json::Value>, HashMap<String, serde_json::Value>) {
-        if rank_info.get(0).unwrap_or(&default_rank).get("queueType").unwrap().as_str() == Some("RANKED_FLEX_SR") {
-            let flex_rank = rank_info.get(0).unwrap_or(&default_rank).clone();
-            let solo_rank = rank_info.get(1).unwrap_or(&default_rank).clone();
-            (solo_rank, flex_rank)
-        } else {
-            let solo_rank = rank_info.get(0).unwrap_or(&default_rank).clone();
-            let flex_rank = rank_info.get(1).unwrap_or(&default_rank).clone();
-            (solo_rank, flex_rank)
-        }
+) -> (
+    HashMap<String, serde_json::Value>,
+    HashMap<String, serde_json::Value>,
+) {
+    if rank_info
+        .get(0)
+        .unwrap_or(&default_rank)
+        .get("queueType")
+        .unwrap()
+        .as_str()
+        == Some("RANKED_FLEX_SR")
+    {
+        let flex_rank = rank_info.get(0).unwrap_or(&default_rank).clone();
+        let solo_rank = rank_info.get(1).unwrap_or(&default_rank).clone();
+        (solo_rank, flex_rank)
+    } else {
+        let solo_rank = rank_info.get(0).unwrap_or(&default_rank).clone();
+        let flex_rank = rank_info.get(1).unwrap_or(&default_rank).clone();
+        (solo_rank, flex_rank)
     }
+}
 
 /// ⚙️ **Function**: Converts a `Region` enum into its corresponding server string representation.
 ///
@@ -170,24 +176,22 @@ pub fn determine_solo_flex(
 /// let server = region_to_string(&Region::NA);
 /// assert_eq!(server, "na1");
 /// ```
-pub fn region_to_string(
-    region: &Region
-    ) -> String {
-        match region {
-            Region::NA => "na1",
-            Region::EUW => "euw1",
-            Region::EUNE => "eun1",
-            Region::KR => "kr",
-            Region::BR => "br1",
-            Region::LAN => "la1",
-            Region::LAS => "la2",
-            Region::OCE => "oc1",
-            Region::RU => "ru",
-            Region::TR => "tr1",
-            Region::JP => "jp1",
-        }
-        .to_string()
-    }
+pub fn region_to_string(region: &Region) -> String {
+    (match region {
+        Region::NA => "na1",
+        Region::EUW => "euw1",
+        Region::EUNE => "eun1",
+        Region::KR => "kr",
+        Region::BR => "br1",
+        Region::LAN => "la1",
+        Region::LAS => "la2",
+        Region::OCE => "oc1",
+        Region::RU => "ru",
+        Region::TR => "tr1",
+        Region::JP => "jp1",
+    })
+    .to_string()
+}
 
 /// ⚙️ **Function**: Converts a duration in seconds into a tuple representing minutes and seconds.
 ///
@@ -213,36 +217,92 @@ pub fn region_to_string(
 ///
 /// # Notes:
 /// - The seconds part is always formatted as two digits. For example, if the input is 610 seconds (10 minutes and 10 seconds), the result will be `"10", "10"`.
-pub fn seconds_to_time(
-    seconds: u64
-    ) -> (String, String){
-        let game_duration_minutes = seconds / 60;
-        let game_duration_seconds = seconds % 60;
-        let game_duration_seconds_str: String;
-        if game_duration_seconds < 10 {
-            game_duration_seconds_str = format!("0{}", game_duration_seconds)
-        } else {
-            game_duration_seconds_str = game_duration_seconds.to_string()
-        };
-        (game_duration_minutes.to_string(), game_duration_seconds_str)
+pub fn seconds_to_time(seconds: u64) -> (String, String) {
+    let game_duration_minutes = seconds / 60;
+    let game_duration_seconds = seconds % 60;
+    let game_duration_seconds_str: String;
+    if game_duration_seconds < 10 {
+        game_duration_seconds_str = format!("0{}", game_duration_seconds);
+    } else {
+        game_duration_seconds_str = game_duration_seconds.to_string();
     }
-
-pub async fn get_emoji(mongo_client: &Client, role: &str, name: &str) -> Result<String, Error> {
-    let collection = mongo_client
-        .database("stat-summoner")
-        .collection::<EmojiId>("emojis_id");
+    (game_duration_minutes.to_string(), game_duration_seconds_str)
+}
+/// ⚙️ **Function**: Retrieves a custom emoji string based on role and name from a MongoDB collection.
+///
+/// This asynchronous function searches a MongoDB collection for a custom emoji corresponding to a specific role and name.
+/// If found, it formats the emoji in a string compatible with Discord. If not found, it returns the provided name as a fallback.
+///
+/// # Parameters:
+/// - `collection`: A MongoDB `Collection<EmojiId>` containing the emoji mappings, where each document maps a role and name to an emoji ID.
+/// - `role`: A string slice representing the role of the emoji (e.g., "position", "champions").
+/// - `name`: A string slice representing the name of the emoji (e.g., "TOP", "JUNGLE", champion names).
+///
+/// # Returns:
+/// - `Result<String, Error>`: Returns a `Result` containing the formatted emoji string (if found) or the name as a fallback.
+///   In case of errors, it logs the error and returns the name.
+///
+/// # Example:
+/// This function can be used to retrieve custom emojis for roles or champions when creating embeds for Discord:
+///
+/// ```rust
+/// let emoji = get_emoji(collection_emojis, "position", "TOP").await?;
+/// println!("The emoji for TOP is: {}", emoji);
+/// ```
+///
+/// # Notes:
+/// - The function creates a MongoDB filter to search for the emoji based on the role and name fields.
+/// - If an emoji is found, it formats the emoji string in the form `<:name:id>`, which is recognized by Discord.
+/// - If no emoji is found or an error occurs, the function returns the `name` string as a fallback and logs any errors encountered during the search.
+pub async fn get_emoji(
+    collection: Collection<EmojiId>,
+    role: &str,
+    name: &str,
+) -> Result<String, Error> {
     let filter = doc! { "role": role, "name": name };
 
     match collection.find_one(filter).await {
-
         Ok(Some(emoji_id)) => {
             let emoji_str = format!("<:{}:{}>", name, emoji_id.id_emoji);
             Ok(emoji_str)
-        },
+        }
         Ok(None) => Ok(name.to_string()),
         Err(e) => {
             eprintln!("Erreur lors de la recherche de l'emoji: {:?}", e);
             Ok(name.to_string())
         }
     }
+}
+
+/// ⚙️ **Function**: Retrieves the game mode corresponding to a given queue ID.
+///
+/// This function looks up the game mode based on a provided `queue_id` using a predefined mapping (`QUEUE_ID_MAP`)
+/// of queue IDs to game modes. If the `queue_id` is not found in the map, it returns "Unknown".
+///
+/// # Parameters:
+/// - `queue_id`: An `i64` representing the queue ID for which the game mode is being queried.
+///
+/// # Returns:
+/// - `&'static str`: Returns a string slice representing the game mode name corresponding to the queue ID, or "Unknown" if the queue ID is not found.
+///
+/// # Example:
+/// This function can be used to retrieve the game mode based on the queue ID returned from match data:
+///
+/// ```rust
+/// let queue_id = 420; // Example queue ID for Ranked Solo/Duo
+/// let game_mode = get_game_mode(queue_id);
+/// println!("The game mode is: {}", game_mode);
+/// ```
+///
+/// # Notes:
+/// - The function iterates over the `QUEUE_ID_MAP`, a predefined list of tuples mapping queue IDs to game modes.
+/// - If the queue ID is found in the map, the corresponding game mode is returned immediately.
+/// - If the queue ID is not found, the function defaults to returning "Unknown".
+pub fn get_game_mode(queue_id: i64) -> &'static str {
+    for &(id, mode) in QUEUE_ID_MAP.iter() {
+        if id == queue_id {
+            return mode;
+        }
+    }
+    "Unknown"
 }

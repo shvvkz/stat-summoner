@@ -1,6 +1,6 @@
 use mongodb::Client;
-use serde_json::Value;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 pub struct Data {
     pub riot_api_key: String,
     pub mongo_client: Client,
@@ -21,8 +21,8 @@ pub struct SummonerFollowedData {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct EmojiId{
+pub struct EmojiId {
     pub role: String,
     pub name: String,
-    pub id_emoji: String
+    pub id_emoji: String,
 }
