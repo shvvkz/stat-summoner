@@ -246,18 +246,78 @@
 <a href="#246" id="246">246</a>
 <a href="#247" id="247">247</a>
 <a href="#248" id="248">248</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>chrono::{Utc, NaiveDateTime};
-<span class="kw">use </span>mongodb::bson::doc;
-<span class="kw">use </span>mongodb::{Client, Collection};
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::constants::QUEUE_ID_MAP;
 <span class="kw">use </span><span class="kw">crate</span>::models::data::EmojiId;
-<span class="kw">use </span>serde::de::value::Error;
-<span class="kw">use </span><span class="kw">crate</span>::models::constants::QUEUE_ID_MAP;
 <span class="kw">use </span><span class="kw">crate</span>::models::region::Region;
+<span class="kw">use </span>chrono::{NaiveDateTime, Utc};
+<span class="kw">use </span>mongodb::bson::doc;
+<span class="kw">use </span>mongodb::Collection;
+<span class="kw">use </span>serde::de::value::Error;
 <span class="kw">use </span>std::collections::HashMap;
 
 <span class="doccomment">/// ⚙️ **Function**: Checks if a given queue ID corresponds to a valid game mode.
 ///
-/// This function verifies if the provided `queue_id` matches any valid game modes listed in the `QUEUE_ID_MAP`. 
+/// This function verifies if the provided `queue_id` matches any valid game modes listed in the `QUEUE_ID_MAP`.
 /// The `QUEUE_ID_MAP` contains a predefined set of game modes such as ranked, normal, and ARAM.
 ///
 /// # Parameters:
@@ -282,15 +342,13 @@
 /// ```text
 /// true
 /// ```
-</span><span class="kw">pub fn </span>is_valid_game_mode(
-    queue_id: i64
-    ) -&gt; bool {
-        QUEUE_ID_MAP.iter().any(|<span class="kw-2">&amp;</span>(id, <span class="kw">_</span>)| id == queue_id)
-    }
+</span><span class="kw">pub fn </span>is_valid_game_mode(queue_id: i64) -&gt; bool {
+    QUEUE_ID_MAP.iter().any(|<span class="kw-2">&amp;</span>(id, <span class="kw">_</span>)| id == queue_id)
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Calculates the time elapsed since a game ended and returns it as a human-readable string.
 ///
-/// This function computes the duration between the game's end timestamp and the current time. It returns a string 
+/// This function computes the duration between the game's end timestamp and the current time. It returns a string
 /// representing how much time has passed, formatted in seconds, minutes, hours, days, months, or years, depending on the duration.
 ///
 /// # Parameters:
@@ -315,33 +373,31 @@
 /// "5 days ago"
 /// "1 year ago"
 /// ```
-</span><span class="kw">pub fn </span>time_since_game_ended(
-    game_end_timestamp: u64
-    ) -&gt; String {
-        <span class="kw">let </span>game_end_time = NaiveDateTime::from_timestamp_opt((game_end_timestamp / <span class="number">1000</span>) <span class="kw">as </span>i64, <span class="number">0</span>)
-            .expect(<span class="string">"Invalid timestamp"</span>);
-        <span class="kw">let </span>now = Utc::now().naive_utc();
-        <span class="kw">let </span>duration = now.signed_duration_since(game_end_time);
+</span><span class="kw">pub fn </span>time_since_game_ended(game_end_timestamp: u64) -&gt; String {
+    <span class="kw">let </span>game_end_time = NaiveDateTime::from_timestamp_opt((game_end_timestamp / <span class="number">1000</span>) <span class="kw">as </span>i64, <span class="number">0</span>)
+        .expect(<span class="string">"Invalid timestamp"</span>);
+    <span class="kw">let </span>now = Utc::now().naive_utc();
+    <span class="kw">let </span>duration = now.signed_duration_since(game_end_time);
 
-        <span class="kw">if </span>duration.num_seconds() &lt; <span class="number">60 </span>{
-            <span class="macro">format!</span>(<span class="string">"{} seconds ago"</span>, duration.num_seconds())
-        } <span class="kw">else if </span>duration.num_minutes() &lt; <span class="number">60 </span>{
-            <span class="macro">format!</span>(<span class="string">"{} minutes ago"</span>, duration.num_minutes())
-        } <span class="kw">else if </span>duration.num_hours() &lt; <span class="number">24 </span>{
-            <span class="macro">format!</span>(<span class="string">"{} hours ago"</span>, duration.num_hours())
-        } <span class="kw">else if </span>duration.num_days() &lt; <span class="number">30 </span>{
-            <span class="macro">format!</span>(<span class="string">"{} days ago"</span>, duration.num_days())
-        } <span class="kw">else if </span>duration.num_days() &lt; <span class="number">365 </span>{
-            <span class="macro">format!</span>(<span class="string">"{} months ago"</span>, duration.num_days() / <span class="number">30</span>)
-        } <span class="kw">else </span>{
-            <span class="macro">format!</span>(<span class="string">"{} years ago"</span>, duration.num_days() / <span class="number">365</span>)
-        }
+    <span class="kw">if </span>duration.num_seconds() &lt; <span class="number">60 </span>{
+        <span class="macro">format!</span>(<span class="string">"{} seconds ago"</span>, duration.num_seconds())
+    } <span class="kw">else if </span>duration.num_minutes() &lt; <span class="number">60 </span>{
+        <span class="macro">format!</span>(<span class="string">"{} minutes ago"</span>, duration.num_minutes())
+    } <span class="kw">else if </span>duration.num_hours() &lt; <span class="number">24 </span>{
+        <span class="macro">format!</span>(<span class="string">"{} hours ago"</span>, duration.num_hours())
+    } <span class="kw">else if </span>duration.num_days() &lt; <span class="number">30 </span>{
+        <span class="macro">format!</span>(<span class="string">"{} days ago"</span>, duration.num_days())
+    } <span class="kw">else if </span>duration.num_days() &lt; <span class="number">365 </span>{
+        <span class="macro">format!</span>(<span class="string">"{} months ago"</span>, duration.num_days() / <span class="number">30</span>)
+    } <span class="kw">else </span>{
+        <span class="macro">format!</span>(<span class="string">"{} years ago"</span>, duration.num_days() / <span class="number">365</span>)
     }
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Determines Solo/Duo and Flex ranks from rank information.
 ///
-/// This function analyzes a list of rank information and determines the Solo/Duo and Flex ranks based on the provided data. 
-/// It checks the `queueType` field in the rank data to distinguish between Solo/Duo and Flex ranks. If no rank data is available 
+/// This function analyzes a list of rank information and determines the Solo/Duo and Flex ranks based on the provided data.
+/// It checks the `queueType` field in the rank data to distinguish between Solo/Duo and Flex ranks. If no rank data is available
 /// for a specific queue, it returns a default rank.
 ///
 /// # Parameters:
@@ -374,17 +430,27 @@
 </span><span class="kw">pub fn </span>determine_solo_flex(
     rank_info: <span class="kw-2">&amp;</span>Vec&lt;HashMap&lt;String, serde_json::Value&gt;&gt;,
     default_rank: <span class="kw-2">&amp;</span>HashMap&lt;String, serde_json::Value&gt;,
-    ) -&gt; (HashMap&lt;String, serde_json::Value&gt;, HashMap&lt;String, serde_json::Value&gt;) {
-        <span class="kw">if </span>rank_info.get(<span class="number">0</span>).unwrap_or(<span class="kw-2">&amp;</span>default_rank).get(<span class="string">"queueType"</span>).unwrap().as_str() == <span class="prelude-val">Some</span>(<span class="string">"RANKED_FLEX_SR"</span>) {
-            <span class="kw">let </span>flex_rank = rank_info.get(<span class="number">0</span>).unwrap_or(<span class="kw-2">&amp;</span>default_rank).clone();
-            <span class="kw">let </span>solo_rank = rank_info.get(<span class="number">1</span>).unwrap_or(<span class="kw-2">&amp;</span>default_rank).clone();
-            (solo_rank, flex_rank)
-        } <span class="kw">else </span>{
-            <span class="kw">let </span>solo_rank = rank_info.get(<span class="number">0</span>).unwrap_or(<span class="kw-2">&amp;</span>default_rank).clone();
-            <span class="kw">let </span>flex_rank = rank_info.get(<span class="number">1</span>).unwrap_or(<span class="kw-2">&amp;</span>default_rank).clone();
-            (solo_rank, flex_rank)
-        }
+) -&gt; (
+    HashMap&lt;String, serde_json::Value&gt;,
+    HashMap&lt;String, serde_json::Value&gt;,
+) {
+    <span class="kw">if </span>rank_info
+        .get(<span class="number">0</span>)
+        .unwrap_or(<span class="kw-2">&amp;</span>default_rank)
+        .get(<span class="string">"queueType"</span>)
+        .unwrap()
+        .as_str()
+        == <span class="prelude-val">Some</span>(<span class="string">"RANKED_FLEX_SR"</span>)
+    {
+        <span class="kw">let </span>flex_rank = rank_info.get(<span class="number">0</span>).unwrap_or(<span class="kw-2">&amp;</span>default_rank).clone();
+        <span class="kw">let </span>solo_rank = rank_info.get(<span class="number">1</span>).unwrap_or(<span class="kw-2">&amp;</span>default_rank).clone();
+        (solo_rank, flex_rank)
+    } <span class="kw">else </span>{
+        <span class="kw">let </span>solo_rank = rank_info.get(<span class="number">0</span>).unwrap_or(<span class="kw-2">&amp;</span>default_rank).clone();
+        <span class="kw">let </span>flex_rank = rank_info.get(<span class="number">1</span>).unwrap_or(<span class="kw-2">&amp;</span>default_rank).clone();
+        (solo_rank, flex_rank)
     }
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Converts a `Region` enum into its corresponding server string representation.
 ///
@@ -418,24 +484,22 @@
 /// let server = region_to_string(&amp;Region::NA);
 /// assert_eq!(server, "na1");
 /// ```
-</span><span class="kw">pub fn </span>region_to_string(
-    region: <span class="kw-2">&amp;</span>Region
-    ) -&gt; String {
-        <span class="kw">match </span>region {
-            Region::NA =&gt; <span class="string">"na1"</span>,
-            Region::EUW =&gt; <span class="string">"euw1"</span>,
-            Region::EUNE =&gt; <span class="string">"eun1"</span>,
-            Region::KR =&gt; <span class="string">"kr"</span>,
-            Region::BR =&gt; <span class="string">"br1"</span>,
-            Region::LAN =&gt; <span class="string">"la1"</span>,
-            Region::LAS =&gt; <span class="string">"la2"</span>,
-            Region::OCE =&gt; <span class="string">"oc1"</span>,
-            Region::RU =&gt; <span class="string">"ru"</span>,
-            Region::TR =&gt; <span class="string">"tr1"</span>,
-            Region::JP =&gt; <span class="string">"jp1"</span>,
-        }
-        .to_string()
-    }
+</span><span class="kw">pub fn </span>region_to_string(region: <span class="kw-2">&amp;</span>Region) -&gt; String {
+    (<span class="kw">match </span>region {
+        Region::NA =&gt; <span class="string">"na1"</span>,
+        Region::EUW =&gt; <span class="string">"euw1"</span>,
+        Region::EUNE =&gt; <span class="string">"eun1"</span>,
+        Region::KR =&gt; <span class="string">"kr"</span>,
+        Region::BR =&gt; <span class="string">"br1"</span>,
+        Region::LAN =&gt; <span class="string">"la1"</span>,
+        Region::LAS =&gt; <span class="string">"la2"</span>,
+        Region::OCE =&gt; <span class="string">"oc1"</span>,
+        Region::RU =&gt; <span class="string">"ru"</span>,
+        Region::TR =&gt; <span class="string">"tr1"</span>,
+        Region::JP =&gt; <span class="string">"jp1"</span>,
+    })
+    .to_string()
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Converts a duration in seconds into a tuple representing minutes and seconds.
 ///
@@ -461,36 +525,93 @@
 ///
 /// # Notes:
 /// - The seconds part is always formatted as two digits. For example, if the input is 610 seconds (10 minutes and 10 seconds), the result will be `"10", "10"`.
-</span><span class="kw">pub fn </span>seconds_to_time(
-    seconds: u64
-    ) -&gt; (String, String){
-        <span class="kw">let </span>game_duration_minutes = seconds / <span class="number">60</span>;
-        <span class="kw">let </span>game_duration_seconds = seconds % <span class="number">60</span>;
-        <span class="kw">let </span>game_duration_seconds_str: String;
-        <span class="kw">if </span>game_duration_seconds &lt; <span class="number">10 </span>{
-            game_duration_seconds_str = <span class="macro">format!</span>(<span class="string">"0{}"</span>, game_duration_seconds)
-        } <span class="kw">else </span>{
-            game_duration_seconds_str = game_duration_seconds.to_string()
-        };
-        (game_duration_minutes.to_string(), game_duration_seconds_str)
+</span><span class="kw">pub fn </span>seconds_to_time(seconds: u64) -&gt; (String, String) {
+    <span class="kw">let </span>game_duration_minutes = seconds / <span class="number">60</span>;
+    <span class="kw">let </span>game_duration_seconds = seconds % <span class="number">60</span>;
+    <span class="kw">let </span>game_duration_seconds_str: String;
+    <span class="kw">if </span>game_duration_seconds &lt; <span class="number">10 </span>{
+        game_duration_seconds_str = <span class="macro">format!</span>(<span class="string">"0{}"</span>, game_duration_seconds);
+    } <span class="kw">else </span>{
+        game_duration_seconds_str = game_duration_seconds.to_string();
     }
-
-<span class="kw">pub async fn </span>get_emoji(mongo_client: <span class="kw-2">&amp;</span>Client, role: <span class="kw-2">&amp;</span>str, name: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;String, Error&gt; {
-    <span class="kw">let </span>collection = mongo_client
-        .database(<span class="string">"stat-summoner"</span>)
-        .collection::&lt;EmojiId&gt;(<span class="string">"emojis_id"</span>);
+    (game_duration_minutes.to_string(), game_duration_seconds_str)
+}
+<span class="doccomment">/// ⚙️ **Function**: Retrieves a custom emoji string based on role and name from a MongoDB collection.
+///
+/// This asynchronous function searches a MongoDB collection for a custom emoji corresponding to a specific role and name.
+/// If found, it formats the emoji in a string compatible with Discord. If not found, it returns the provided name as a fallback.
+///
+/// # Parameters:
+/// - `collection`: A MongoDB `Collection&lt;EmojiId&gt;` containing the emoji mappings, where each document maps a role and name to an emoji ID.
+/// - `role`: A string slice representing the role of the emoji (e.g., "position", "champions").
+/// - `name`: A string slice representing the name of the emoji (e.g., "TOP", "JUNGLE", champion names).
+///
+/// # Returns:
+/// - `Result&lt;String, Error&gt;`: Returns a `Result` containing the formatted emoji string (if found) or the name as a fallback.
+///   In case of errors, it logs the error and returns the name.
+///
+/// # Example:
+/// This function can be used to retrieve custom emojis for roles or champions when creating embeds for Discord:
+///
+/// ```rust
+/// let emoji = get_emoji(collection_emojis, "position", "TOP").await?;
+/// println!("The emoji for TOP is: {}", emoji);
+/// ```
+///
+/// # Notes:
+/// - The function creates a MongoDB filter to search for the emoji based on the role and name fields.
+/// - If an emoji is found, it formats the emoji string in the form `&lt;:name:id&gt;`, which is recognized by Discord.
+/// - If no emoji is found or an error occurs, the function returns the `name` string as a fallback and logs any errors encountered during the search.
+</span><span class="kw">pub async fn </span>get_emoji(
+    collection: Collection&lt;EmojiId&gt;,
+    role: <span class="kw-2">&amp;</span>str,
+    name: <span class="kw-2">&amp;</span>str,
+) -&gt; <span class="prelude-ty">Result</span>&lt;String, Error&gt; {
     <span class="kw">let </span>filter = <span class="macro">doc!</span> { <span class="string">"role"</span>: role, <span class="string">"name"</span>: name };
 
     <span class="kw">match </span>collection.find_one(filter).<span class="kw">await </span>{
-
         <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(emoji_id)) =&gt; {
             <span class="kw">let </span>emoji_str = <span class="macro">format!</span>(<span class="string">"&lt;:{}:{}&gt;"</span>, name, emoji_id.id_emoji);
             <span class="prelude-val">Ok</span>(emoji_str)
-        },
+        }
         <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) =&gt; <span class="prelude-val">Ok</span>(name.to_string()),
         <span class="prelude-val">Err</span>(e) =&gt; {
             <span class="macro">eprintln!</span>(<span class="string">"Erreur lors de la recherche de l'emoji: {:?}"</span>, e);
             <span class="prelude-val">Ok</span>(name.to_string())
         }
     }
-}</code></pre></div></section></main></body></html>
+}
+
+<span class="doccomment">/// ⚙️ **Function**: Retrieves the game mode corresponding to a given queue ID.
+///
+/// This function looks up the game mode based on a provided `queue_id` using a predefined mapping (`QUEUE_ID_MAP`)
+/// of queue IDs to game modes. If the `queue_id` is not found in the map, it returns "Unknown".
+///
+/// # Parameters:
+/// - `queue_id`: An `i64` representing the queue ID for which the game mode is being queried.
+///
+/// # Returns:
+/// - `&amp;'static str`: Returns a string slice representing the game mode name corresponding to the queue ID, or "Unknown" if the queue ID is not found.
+///
+/// # Example:
+/// This function can be used to retrieve the game mode based on the queue ID returned from match data:
+///
+/// ```rust
+/// let queue_id = 420; // Example queue ID for Ranked Solo/Duo
+/// let game_mode = get_game_mode(queue_id);
+/// println!("The game mode is: {}", game_mode);
+/// ```
+///
+/// # Notes:
+/// - The function iterates over the `QUEUE_ID_MAP`, a predefined list of tuples mapping queue IDs to game modes.
+/// - If the queue ID is found in the map, the corresponding game mode is returned immediately.
+/// - If the queue ID is not found, the function defaults to returning "Unknown".
+</span><span class="kw">pub fn </span>get_game_mode(queue_id: i64) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
+    <span class="kw">for </span><span class="kw-2">&amp;</span>(id, mode) <span class="kw">in </span>QUEUE_ID_MAP.iter() {
+        <span class="kw">if </span>id == queue_id {
+            <span class="kw">return </span>mode;
+        }
+    }
+    <span class="string">"Unknown"
+</span>}
+</code></pre></div></section></main></body></html>

@@ -27,8 +27,8 @@
 <a href="#27" id="27">27</a>
 <a href="#28" id="28">28</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>mongodb::Client;
-<span class="kw">use </span>serde_json::Value;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
+<span class="kw">use </span>serde_json::Value;
 <span class="kw">pub struct </span>Data {
     <span class="kw">pub </span>riot_api_key: String,
     <span class="kw">pub </span>mongo_client: Client,
@@ -49,8 +49,9 @@
 }
 
 <span class="attr">#[derive(Debug, Serialize, Deserialize)]
-</span><span class="kw">pub struct </span>EmojiId{
+</span><span class="kw">pub struct </span>EmojiId {
     <span class="kw">pub </span>role: String,
     <span class="kw">pub </span>name: String,
-    <span class="kw">pub </span>id_emoji: String
-}</code></pre></div></section></main></body></html>
+    <span class="kw">pub </span>id_emoji: String,
+}
+</code></pre></div></section></main></body></html>

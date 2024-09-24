@@ -136,15 +136,12 @@
 <a href="#136" id="136">136</a>
 <a href="#137" id="137">137</a>
 <a href="#138" id="138">138</a>
-<a href="#139" id="139">139</a>
-<a href="#140" id="140">140</a>
-</pre></div><pre class="rust"><code>
-<span class="kw">use </span><span class="kw">crate</span>::embed::schedule_message_deletion;
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::embed::schedule_message_deletion;
+<span class="kw">use </span><span class="kw">crate</span>::embed::{create_embed_error, create_embed_sucess};
 <span class="kw">use </span><span class="kw">crate</span>::models::data::{Data, SummonerFollowedData};
 <span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
 <span class="kw">use </span><span class="kw">crate</span>::models::modal::FollowGamesModal;
 <span class="kw">use </span>mongodb::bson::doc;
-<span class="kw">use </span><span class="kw">crate</span>::embed::{create_embed_error, create_embed_sucess};
 
 <span class="doccomment">/// ⚙️ **Function**: Adds a summoner to the database for game follow-up if they are not already being followed.
 ///
@@ -185,17 +182,18 @@
     summoner_id: String,
     match_id: String,
     time_end_follow: String,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
     <span class="kw">match </span>collection.find_one(<span class="macro">doc!</span> { <span class="string">"puuid"</span>: puuid.clone() }).<span class="kw">await </span>{
         <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(_followed_summoner)) =&gt; {
             <span class="kw">let </span>guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(<span class="number">0</span>).to_string();
             <span class="kw">if </span>_followed_summoner.guild_id == guild_id {
                 <span class="kw">match </span>collection
-                .update_one(
-                    <span class="macro">doc!</span> { <span class="string">"puuid"</span>: puuid.clone(), <span class="string">"guild_id"</span>: guild_id },
-                    <span class="macro">doc!</span> { <span class="string">"$set"</span>: { <span class="string">"time_end_follow"</span>: time_end_follow.clone() } }
-                )
-                .<span class="kw">await</span>{
+                    .update_one(
+                        <span class="macro">doc!</span> { <span class="string">"puuid"</span>: puuid.clone(), <span class="string">"guild_id"</span>: guild_id },
+                        <span class="macro">doc!</span> { <span class="string">"$set"</span>: { <span class="string">"time_end_follow"</span>: time_end_follow.clone() } },
+                    )
+                    .<span class="kw">await
+                </span>{
                     <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; {
                         <span class="kw">let </span>success_message = <span class="string">"tracking time has been updated."</span>;
                         <span class="kw">let </span>reply = ctx.send(create_embed_sucess(<span class="kw-2">&amp;</span>success_message)).<span class="kw">await</span><span class="question-mark">?</span>;
@@ -209,8 +207,7 @@
                         <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                     }
                 }
-            }
-            <span class="kw">else</span>{
+            } <span class="kw">else </span>{
                 <span class="kw">let </span>guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(<span class="number">0</span>).to_string();
                 <span class="kw">let </span>channel_id = ctx.channel_id().get();
                 <span class="kw">let </span>new_followed_summoner = SummonerFollowedData {
@@ -222,7 +219,7 @@
                     last_match_id: match_id.clone(),
                     time_end_follow: time_end_follow.clone(),
                     channel_id: channel_id,
-                    guild_id: guild_id
+                    guild_id: guild_id,
                 };
                 <span class="kw">match </span>collection.insert_one(new_followed_summoner).<span class="kw">await </span>{
                     <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; {
@@ -252,7 +249,7 @@
                 last_match_id: match_id.clone(),
                 time_end_follow: time_end_follow.clone(),
                 channel_id: channel_id,
-                guild_id: guild_id
+                guild_id: guild_id,
             };
             <span class="kw">match </span>collection.insert_one(new_followed_summoner).<span class="kw">await </span>{
                 <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; {
@@ -277,5 +274,4 @@
         }
     }
 }
-
 </code></pre></div></section></main></body></html>

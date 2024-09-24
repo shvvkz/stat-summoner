@@ -220,24 +220,16 @@
 <a href="#220" id="220">220</a>
 <a href="#221" id="221">221</a>
 <a href="#222" id="222">222</a>
-<a href="#223" id="223">223</a>
-<a href="#224" id="224">224</a>
-<a href="#225" id="225">225</a>
-<a href="#226" id="226">226</a>
-<a href="#227" id="227">227</a>
-<a href="#228" id="228">228</a>
-<a href="#229" id="229">229</a>
-</pre></div><pre class="rust"><code>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::data::SummonerFollowedData;
+<span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
 <span class="kw">use </span>chrono::{Duration, Utc};
+<span class="kw">use </span>futures::StreamExt;
 <span class="kw">use </span>mongodb::bson::doc;
 <span class="kw">use </span>mongodb::Collection;
 <span class="kw">use </span>poise::serenity_prelude::{CreateEmbed, CreateEmbedFooter};
 <span class="kw">use </span>poise::CreateReply;
 <span class="kw">use </span>serde_json::json;
 <span class="kw">use </span>serde_json::Value;
-<span class="kw">use </span>futures::StreamExt;
-<span class="kw">use </span><span class="kw">crate</span>::models::data::SummonerFollowedData;
-<span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
 
 <span class="doccomment">/// ⚙️ **Function**: Fetches the list of summoners followed in a specific Discord guild.
 ///
@@ -286,33 +278,31 @@
 </span><span class="kw">pub async fn </span>get_data_followed_summoner(
     collection: Collection&lt;SummonerFollowedData&gt;,
     guild_id: String,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;Value, Error&gt; {
-        <span class="kw">let </span>current_timestamp = Utc::now().timestamp();
-        <span class="kw">let </span><span class="kw-2">mut </span>cursor = collection
-            .find(<span class="macro">doc!</span> { <span class="string">"guild_id"</span>: guild_id })
-            .<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span><span class="kw-2">mut </span>summoners = Vec::new();
-        <span class="kw">while let </span><span class="prelude-val">Some</span>(followed_data) = cursor.next().<span class="kw">await </span>{
-            <span class="kw">if let </span><span class="prelude-val">Ok</span>(data) = followed_data {
-                <span class="kw">let </span>name = <span class="kw-2">&amp;</span>data.name;
-                <span class="kw">let </span>time_end_follow = data.time_end_follow.parse::&lt;i64&gt;().unwrap();
+) -&gt; <span class="prelude-ty">Result</span>&lt;Value, Error&gt; {
+    <span class="kw">let </span>current_timestamp = Utc::now().timestamp();
+    <span class="kw">let </span><span class="kw-2">mut </span>cursor = collection.find(<span class="macro">doc!</span> { <span class="string">"guild_id"</span>: guild_id }).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>summoners = Vec::new();
+    <span class="kw">while let </span><span class="prelude-val">Some</span>(followed_data) = cursor.next().<span class="kw">await </span>{
+        <span class="kw">if let </span><span class="prelude-val">Ok</span>(data) = followed_data {
+            <span class="kw">let </span>name = <span class="kw-2">&amp;</span>data.name;
+            <span class="kw">let </span>time_end_follow = data.time_end_follow.parse::&lt;i64&gt;().unwrap();
 
-                <span class="kw">let </span>remaining_duration = time_end_follow - current_timestamp;
-                <span class="kw">let </span>time_remaining_str = <span class="kw">if </span>remaining_duration &gt; <span class="number">0 </span>{
-                    <span class="kw">let </span>duration = Duration::seconds(remaining_duration);
-                    format_duration(duration)
-                } <span class="kw">else </span>{
-                    <span class="string">"Follow ended"</span>.to_string()
-                };
-                <span class="kw">let </span>summoner = <span class="macro">json!</span>({
-                    <span class="string">"name"</span>: name,
-                    <span class="string">"time_remaining"</span>: time_remaining_str
-                });
-                summoners.push(summoner);
-            }
+            <span class="kw">let </span>remaining_duration = time_end_follow - current_timestamp;
+            <span class="kw">let </span>time_remaining_str = <span class="kw">if </span>remaining_duration &gt; <span class="number">0 </span>{
+                <span class="kw">let </span>duration = Duration::seconds(remaining_duration);
+                format_duration(duration)
+            } <span class="kw">else </span>{
+                <span class="string">"Follow ended"</span>.to_string()
+            };
+            <span class="kw">let </span>summoner = <span class="macro">json!</span>({
+                <span class="string">"name"</span>: name,
+                <span class="string">"time_remaining"</span>: time_remaining_str
+            });
+            summoners.push(summoner);
         }
-        <span class="prelude-val">Ok</span>(<span class="macro">json!</span>({ <span class="string">"tracked_summoners"</span>: summoners }))
     }
+    <span class="prelude-val">Ok</span>(<span class="macro">json!</span>({ <span class="string">"tracked_summoners"</span>: summoners }))
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Formats a `Duration` into a human-readable string.
 ///
@@ -349,40 +339,37 @@
 ///
 /// The function will return the appropriate formatted string based on the duration passed in.
 
-</span><span class="kw">fn </span>format_duration(
-    duration: Duration
-    ) -&gt; String {
-        <span class="kw">let </span>days = duration.num_days();
-        <span class="kw">let </span>hours = duration.num_hours() % <span class="number">24</span>;
-        <span class="kw">let </span>minutes = duration.num_minutes() % <span class="number">60</span>;
+</span><span class="kw">fn </span>format_duration(duration: Duration) -&gt; String {
+    <span class="kw">let </span>days = duration.num_days();
+    <span class="kw">let </span>hours = duration.num_hours() % <span class="number">24</span>;
+    <span class="kw">let </span>minutes = duration.num_minutes() % <span class="number">60</span>;
 
-        <span class="kw">if </span>days &gt; <span class="number">0 </span>{
-            <span class="kw">if </span>hours &gt; <span class="number">0 </span>{
-                <span class="kw">if </span>hours == <span class="number">1 </span>{
-                    <span class="kw">return </span><span class="macro">format!</span>(<span class="string">"in 1 day and 1 hour"</span>);
-                } <span class="kw">else </span>{
-                    <span class="kw">return </span><span class="macro">format!</span>(<span class="string">"in 1 day and {} hours"</span>, hours);
-                }
-            } <span class="kw">else </span>{
-                <span class="kw">return </span><span class="macro">format!</span>(<span class="string">"in 1 day"</span>);
-            }
-        } <span class="kw">else if </span>hours &gt; <span class="number">0 </span>{
+    <span class="kw">if </span>days &gt; <span class="number">0 </span>{
+        <span class="kw">if </span>hours &gt; <span class="number">0 </span>{
             <span class="kw">if </span>hours == <span class="number">1 </span>{
-                <span class="kw">return </span><span class="macro">format!</span>(<span class="string">"in 1 hour"</span>);
+                <span class="kw">return </span><span class="macro">format!</span>(<span class="string">"in 1 day and 1 hour"</span>);
             } <span class="kw">else </span>{
-                <span class="kw">return </span><span class="macro">format!</span>(<span class="string">"in {} hours"</span>, hours);
-            }
-        } <span class="kw">else if </span>minutes &gt; <span class="number">0 </span>{
-            <span class="kw">if </span>minutes == <span class="number">1 </span>{
-                <span class="kw">return </span><span class="macro">format!</span>(<span class="string">"in 1 minute"</span>);
-            } <span class="kw">else </span>{
-                <span class="kw">return </span><span class="macro">format!</span>(<span class="string">"in {} minutes"</span>, minutes);
+                <span class="kw">return </span><span class="macro">format!</span>(<span class="string">"in 1 day and {} hours"</span>, hours);
             }
         } <span class="kw">else </span>{
-            <span class="kw">return </span><span class="string">"less than a minute"</span>.to_string();
+            <span class="kw">return </span><span class="macro">format!</span>(<span class="string">"in 1 day"</span>);
         }
+    } <span class="kw">else if </span>hours &gt; <span class="number">0 </span>{
+        <span class="kw">if </span>hours == <span class="number">1 </span>{
+            <span class="kw">return </span><span class="macro">format!</span>(<span class="string">"in 1 hour"</span>);
+        } <span class="kw">else </span>{
+            <span class="kw">return </span><span class="macro">format!</span>(<span class="string">"in {} hours"</span>, hours);
+        }
+    } <span class="kw">else if </span>minutes &gt; <span class="number">0 </span>{
+        <span class="kw">if </span>minutes == <span class="number">1 </span>{
+            <span class="kw">return </span><span class="macro">format!</span>(<span class="string">"in 1 minute"</span>);
+        } <span class="kw">else </span>{
+            <span class="kw">return </span><span class="macro">format!</span>(<span class="string">"in {} minutes"</span>, minutes);
+        }
+    } <span class="kw">else </span>{
+        <span class="kw">return </span><span class="string">"less than a minute"</span>.to_string();
     }
-
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Creates an embed displaying the list of followed summoners.
 ///
@@ -422,38 +409,37 @@
 /// ```
 ///
 /// This example would produce an embed listing two summoners, with their remaining follow durations.
-</span><span class="kw">pub fn </span>create_embed_followed_summoner(
-    data: Value
-    ) -&gt; CreateReply {
-        <span class="kw">let </span>binding = <span class="macro">vec!</span>[];
-        <span class="kw">let </span>tracked_summoners = data[<span class="string">"tracked_summoners"</span>].as_array().unwrap_or(<span class="kw-2">&amp;</span>binding);
-        <span class="kw">let </span><span class="kw-2">mut </span>embed = CreateEmbed::new().title(<span class="string">"Tracked Summoners"</span>).color(<span class="number">0xA020F0</span>).footer(CreateEmbedFooter::new(<span class="string">"This message will be deleted in 60 seconds."</span>));
+</span><span class="kw">pub fn </span>create_embed_followed_summoner(data: Value) -&gt; CreateReply {
+    <span class="kw">let </span>binding = <span class="macro">vec!</span>[];
+    <span class="kw">let </span>tracked_summoners = data[<span class="string">"tracked_summoners"</span>].as_array().unwrap_or(<span class="kw-2">&amp;</span>binding);
+    <span class="kw">let </span><span class="kw-2">mut </span>embed = CreateEmbed::new()
+        .title(<span class="string">"Tracked Summoners"</span>)
+        .color(<span class="number">0xA020F0</span>)
+        .footer(CreateEmbedFooter::new(
+            <span class="string">"This message will be deleted in 60 seconds."</span>,
+        ));
 
-        <span class="kw">if </span>tracked_summoners.is_empty(){
-            embed = embed.field(
-                <span class="string">""</span>,
-                <span class="string">"No summoners are currently being followed"</span>.to_string(),
-                <span class="bool-val">false
-            </span>);
-            <span class="kw">return </span>CreateReply{
-                embeds: <span class="macro">vec!</span>[embed],
-                ..Default::default()
-            }
-        }
-        <span class="kw">for </span>summoner <span class="kw">in </span>tracked_summoners {
-            <span class="kw">let </span>name = summoner[<span class="string">"name"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>);
-            <span class="kw">let </span>time_remaining = summoner[<span class="string">"time_remaining"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>);
-
-            embed = embed.field(
-                name,
-                <span class="macro">format!</span>(<span class="string">"Follow ends in: {}"</span>, time_remaining),
-                <span class="bool-val">false</span>,
-            );
-        }
-
-        CreateReply {
+    <span class="kw">if </span>tracked_summoners.is_empty() {
+        embed = embed.field(
+            <span class="string">""</span>,
+            <span class="string">"No summoners are currently being followed"</span>.to_string(),
+            <span class="bool-val">false</span>,
+        );
+        <span class="kw">return </span>CreateReply {
             embeds: <span class="macro">vec!</span>[embed],
             ..Default::default()
-        }
+        };
     }
+    <span class="kw">for </span>summoner <span class="kw">in </span>tracked_summoners {
+        <span class="kw">let </span>name = summoner[<span class="string">"name"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>);
+        <span class="kw">let </span>time_remaining = summoner[<span class="string">"time_remaining"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>);
+
+        embed = embed.field(name, <span class="macro">format!</span>(<span class="string">"Follow ends in: {}"</span>, time_remaining), <span class="bool-val">false</span>);
+    }
+
+    CreateReply {
+        embeds: <span class="macro">vec!</span>[embed],
+        ..Default::default()
+    }
+}
 </code></pre></div></section></main></body></html>

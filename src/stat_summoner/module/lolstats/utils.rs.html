@@ -298,17 +298,63 @@
 <a href="#298" id="298">298</a>
 <a href="#299" id="299">299</a>
 <a href="#300" id="300">300</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::embed::create_embed;
+<span class="kw">use </span><span class="kw">crate</span>::models::constants::QUEUE_ID_MAP;
+<span class="kw">use </span><span class="kw">crate</span>::models::data::{Data, EmojiId};
+<span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
+<span class="kw">use </span><span class="kw">crate</span>::models::modal::LolStatsModal;
+<span class="kw">use </span><span class="kw">crate</span>::riot_api::get_matchs_info;
+<span class="kw">use </span><span class="kw">crate</span>::utils::{get_emoji, is_valid_game_mode, seconds_to_time, time_since_game_ended};
+<span class="kw">use </span>mongodb::Collection;
 <span class="kw">use </span>poise::CreateReply;
 <span class="kw">use </span>reqwest::Client;
 <span class="kw">use </span>serde_json::{Map, Value};
-<span class="kw">use </span><span class="kw">crate</span>::models::data::Data;
-<span class="kw">use </span><span class="kw">crate</span>::models::modal::LolStatsModal;
-<span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
-<span class="kw">use </span><span class="kw">crate</span>::models::constants::QUEUE_ID_MAP;
-<span class="kw">use </span><span class="kw">crate</span>::riot_api::get_matchs_info;
-<span class="kw">use </span><span class="kw">crate</span>::utils::{is_valid_game_mode, seconds_to_time, time_since_game_ended};
-<span class="kw">use </span><span class="kw">crate</span>::embed::create_embed;
+<span class="kw">use </span>std::collections::HashMap;
 
 <span class="doccomment">/// ⚙️ **Function**: Fetches data and creates an embed displaying League of Legends player stats and match details.
 ///
@@ -358,24 +404,33 @@
     champions: Vec&lt;HashMap&lt;String, Value&gt;&gt;,
     match_ids: Vec&lt;String&gt;,
     ctx: <span class="kw-2">&amp;</span>poise::ApplicationContext&lt;<span class="lifetime">'_</span>, Data, Error&gt;,
-    mongo_client: <span class="kw-2">&amp;</span>mongodb::Client
-    ) -&gt; CreateReply {
+    collection_emoji: Collection&lt;EmojiId&gt;,
+) -&gt; CreateReply {
+    <span class="kw">let </span>dd_json = <span class="kw-2">&amp;</span>ctx.data().dd_json;
+    <span class="kw">let </span>champions_data = dd_json[<span class="string">"data"</span>].as_object().unwrap();
 
-        <span class="kw">let </span>dd_json = <span class="kw-2">&amp;</span>ctx.data().dd_json;
-        <span class="kw">let </span>champions_data = dd_json[<span class="string">"data"</span>].as_object().unwrap();
+    <span class="kw">let </span>solo_rank = extract_rank_info(solo_rank);
+    <span class="kw">let </span>flex_rank = extract_rank_info(flex_rank);
+    <span class="kw">let </span>champions_info =
+        extract_champions_info(champions, champions_data, collection_emoji.clone()).<span class="kw">await</span>;
+    <span class="kw">let </span>match_details = extract_match_info(match_ids, ctx, summoner_id).<span class="kw">await</span>;
 
-        <span class="kw">let </span>solo_rank = extract_rank_info(solo_rank);
-        <span class="kw">let </span>flex_rank = extract_rank_info(flex_rank);
-        <span class="kw">let </span>champions_info = extract_champions_info(champions, champions_data);
-        <span class="kw">let </span>match_details= extract_match_info(match_ids, ctx, summoner_id).<span class="kw">await</span>;
+    <span class="kw">let </span>embed = create_embed(
+        modal_data,
+        solo_rank,
+        flex_rank,
+        champions_info,
+        match_details,
+        collection_emoji.clone(),
+    )
+    .<span class="kw">await
+    </span>.unwrap();
 
-        <span class="kw">let </span>embed = create_embed(modal_data, solo_rank, flex_rank, champions_info, match_details, mongo_client).<span class="kw">await</span>.unwrap();
-
-        CreateReply {
-            embeds: <span class="macro">vec!</span>[embed],
-            ..Default::default()
-        }
+    CreateReply {
+        embeds: <span class="macro">vec!</span>[embed],
+        ..Default::default()
     }
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Extracts and returns League of Legends rank information.
 ///
@@ -418,28 +473,35 @@
 ///     "winrate": 57.14
 /// }
 /// ```
-</span><span class="kw">fn </span>extract_rank_info(
-    rank_data: <span class="kw-2">&amp;</span>HashMap&lt;String, Value&gt;
-    ) -&gt; Value {
-        <span class="kw">let </span>tier = rank_data.get(<span class="string">"tier"</span>).and_then(|v| v.as_str()).unwrap_or(<span class="string">"Unranked"</span>);
-        <span class="kw">let </span>division = rank_data.get(<span class="string">"rank"</span>).and_then(|v| v.as_str()).unwrap_or(<span class="string">""</span>);
-        <span class="kw">let </span>lp = rank_data.get(<span class="string">"leaguePoints"</span>).and_then(|v| v.as_i64()).unwrap_or(<span class="number">0</span>);
-        <span class="kw">let </span>wins = rank_data.get(<span class="string">"wins"</span>).and_then(|v| v.as_i64()).unwrap_or(<span class="number">0</span>);
-        <span class="kw">let </span>losses = rank_data.get(<span class="string">"losses"</span>).and_then(|v| v.as_i64()).unwrap_or(<span class="number">0</span>);
-        <span class="kw">let </span>winrate = <span class="kw">if </span>wins + losses &gt; <span class="number">0 </span>{
-            (wins <span class="kw">as </span>f64 / (wins + losses) <span class="kw">as </span>f64) * <span class="number">100.0
-        </span>} <span class="kw">else </span>{
-            <span class="number">0.0
-        </span>};
-        <span class="kw">return </span><span class="macro">serde_json::json!</span>({
-            <span class="string">"tier"</span>: tier,
-            <span class="string">"division"</span>: division,
-            <span class="string">"lp"</span>: lp,
-            <span class="string">"wins"</span>: wins,
-            <span class="string">"losses"</span>: losses,
-            <span class="string">"winrate"</span>: winrate
-        });
-    }
+</span><span class="kw">fn </span>extract_rank_info(rank_data: <span class="kw-2">&amp;</span>HashMap&lt;String, Value&gt;) -&gt; Value {
+    <span class="kw">let </span>tier = rank_data
+        .get(<span class="string">"tier"</span>)
+        .and_then(|v| v.as_str())
+        .unwrap_or(<span class="string">"Unranked"</span>);
+    <span class="kw">let </span>division = rank_data.get(<span class="string">"rank"</span>).and_then(|v| v.as_str()).unwrap_or(<span class="string">""</span>);
+    <span class="kw">let </span>lp = rank_data
+        .get(<span class="string">"leaguePoints"</span>)
+        .and_then(|v| v.as_i64())
+        .unwrap_or(<span class="number">0</span>);
+    <span class="kw">let </span>wins = rank_data.get(<span class="string">"wins"</span>).and_then(|v| v.as_i64()).unwrap_or(<span class="number">0</span>);
+    <span class="kw">let </span>losses = rank_data
+        .get(<span class="string">"losses"</span>)
+        .and_then(|v| v.as_i64())
+        .unwrap_or(<span class="number">0</span>);
+    <span class="kw">let </span>winrate = <span class="kw">if </span>wins + losses &gt; <span class="number">0 </span>{
+        ((wins <span class="kw">as </span>f64) / ((wins + losses) <span class="kw">as </span>f64)) * <span class="number">100.0
+    </span>} <span class="kw">else </span>{
+        <span class="number">0.0
+    </span>};
+    <span class="kw">return </span><span class="macro">serde_json::json!</span>({
+        <span class="string">"tier"</span>: tier,
+        <span class="string">"division"</span>: division,
+        <span class="string">"lp"</span>: lp,
+        <span class="string">"wins"</span>: wins,
+        <span class="string">"losses"</span>: losses,
+        <span class="string">"winrate"</span>: winrate
+    });
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Extracts and formats champion information for display.
 ///
@@ -483,26 +545,44 @@
 /// Zed - Level: 6 - Points: 98765
 /// Lee Sin - Level: 5 - Points: 54321
 /// ```
-</span><span class="kw">fn </span>extract_champions_info(
+</span><span class="kw">async fn </span>extract_champions_info(
     champions: Vec&lt;HashMap&lt;String, Value&gt;&gt;,
-    champions_data: <span class="kw-2">&amp;</span>Map&lt;String, Value&gt;
-    ) -&gt; String {
-        <span class="comment">//CONNEXION ICI ENSUITE ON MET L'EMOJI A LA PLACE DU NOM DU CHAMP 
-        </span>champions.iter().map(|champion| {
-            <span class="kw">let </span>champion_id = champion.get(<span class="string">"championId"</span>).unwrap().as_i64().unwrap().to_string();
-            <span class="kw">let </span>champion_name = champions_data.values().find_map(|data| {
+    champions_data: <span class="kw-2">&amp;</span>Map&lt;String, Value&gt;,
+    collection_emoji: Collection&lt;EmojiId&gt;,
+) -&gt; String {
+    <span class="kw">let </span><span class="kw-2">mut </span>champion_info_strings = Vec::new();
+
+    <span class="kw">for </span>champion <span class="kw">in </span>champions {
+        <span class="kw">let </span>champion_id = champion
+            .get(<span class="string">"championId"</span>)
+            .unwrap()
+            .as_i64()
+            .unwrap()
+            .to_string();
+        <span class="kw">let </span>champion_name = champions_data
+            .values()
+            .find_map(|data| {
                 <span class="kw">let </span>champ = data.as_object().unwrap();
                 <span class="kw">if </span>champ.get(<span class="string">"key"</span>).unwrap() == <span class="kw-2">&amp;</span>Value::String(champion_id.clone()) {
                     <span class="prelude-val">Some</span>(champ.get(<span class="string">"id"</span>).unwrap().as_str().unwrap())
                 } <span class="kw">else </span>{
                     <span class="prelude-val">None
                 </span>}
-            }).unwrap_or(<span class="string">"Unknown Champion"</span>);
-            <span class="kw">let </span>champion_level = champion.get(<span class="string">"championLevel"</span>).unwrap().as_i64().unwrap();
-            <span class="kw">let </span>champion_points = champion.get(<span class="string">"championPoints"</span>).unwrap().as_i64().unwrap();
-            <span class="macro">format!</span>(<span class="string">"{} - Level: {} - Points: {}"</span>, champion_name, champion_level, champion_points)
-        }).collect::&lt;Vec&lt;String&gt;&gt;().join(<span class="string">"\n"</span>)
+            })
+            .unwrap_or(<span class="string">"Unknown Champion"</span>);
+
+        <span class="kw">let </span>champion_level = champion.get(<span class="string">"championLevel"</span>).unwrap().as_i64().unwrap();
+        <span class="kw">let </span>champion_points = champion.get(<span class="string">"championPoints"</span>).unwrap().as_i64().unwrap();
+        <span class="kw">let </span>champion_emoji = get_emoji(collection_emoji.clone(), <span class="string">"champions"</span>, champion_name)
+            .<span class="kw">await
+            </span>.unwrap_or(champion_name.to_string());
+        champion_info_strings.push(<span class="macro">format!</span>(
+            <span class="string">"{} - Level: {} - Points: {}"</span>,
+            champion_emoji, champion_level, champion_points
+        ));
     }
+    champion_info_strings.join(<span class="string">"\n"</span>)
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Extracts detailed information from recent League of Legends matches.
 ///
@@ -563,38 +643,49 @@
 </span><span class="kw">async fn </span>extract_match_info(
     match_ids: Vec&lt;String&gt;,
     ctx: <span class="kw-2">&amp;</span>poise::ApplicationContext&lt;<span class="lifetime">'_</span>, Data, Error&gt;,
-    summoner_id: String
-    ) -&gt;Vec&lt;Value&gt; {
-        <span class="kw">let </span><span class="kw-2">mut </span>match_details= Vec::&lt;Value&gt;::new();
-        <span class="kw">for </span>id <span class="kw">in </span><span class="kw-2">&amp;</span>match_ids {
-            <span class="kw">let </span>info = get_matchs_info(<span class="kw-2">&amp;</span>Client::new(), id, <span class="kw-2">&amp;</span>ctx.data().riot_api_key).<span class="kw">await</span>.unwrap();
-            <span class="kw">let </span>queue_id = info[<span class="string">"info"</span>][<span class="string">"queueId"</span>].as_i64().unwrap_or(-<span class="number">1</span>);
-            <span class="kw">if </span>is_valid_game_mode(queue_id){
-                <span class="kw">let </span>participants = info[<span class="string">"info"</span>][<span class="string">"participants"</span>].as_array().unwrap();
-                <span class="kw">if let </span><span class="prelude-val">Some</span>(participant) = participants.iter().find(|p| p[<span class="string">"summonerId"</span>].as_str().unwrap() == summoner_id) {
-                    <span class="kw">let </span>champion_name = participant[<span class="string">"championName"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>);
-                    <span class="kw">let </span>kills = participant[<span class="string">"kills"</span>].as_u64().unwrap_or(<span class="number">0</span>);
-                    <span class="kw">let </span>deaths = participant[<span class="string">"deaths"</span>].as_u64().unwrap_or(<span class="number">0</span>);
-                    <span class="kw">let </span>assists = participant[<span class="string">"assists"</span>].as_u64().unwrap_or(<span class="number">0</span>);
-                    <span class="kw">let </span>total_farm = participant[<span class="string">"totalMinionsKilled"</span>].as_u64().unwrap_or(<span class="number">0</span>) + participant[<span class="string">"neutralMinionsKilled"</span>].as_u64().unwrap_or(<span class="number">0</span>);
-                    <span class="kw">let </span>win = participant[<span class="string">"win"</span>].as_bool().unwrap_or(<span class="bool-val">false</span>);
-                    <span class="kw">let </span>game_result = <span class="kw">if </span>win { <span class="string">"Victory" </span>} <span class="kw">else </span>{ <span class="string">"Defeat" </span>};
-                    <span class="kw">let </span>game_duration = info[<span class="string">"info"</span>][<span class="string">"gameDuration"</span>].as_u64().unwrap_or(<span class="number">0</span>);
-                    <span class="kw">let </span>game_end_timestamp = info[<span class="string">"info"</span>][<span class="string">"gameEndTimestamp"</span>].as_u64().unwrap_or(<span class="number">0</span>);
-                    <span class="kw">let </span>time_since_game_ended = time_since_game_ended(game_end_timestamp);
-                    <span class="kw">let </span>(game_duration_minutes, game_duration_seconds) = seconds_to_time(game_duration);
-                    <span class="kw">let </span>game_type = QUEUE_ID_MAP.iter().find(|(id, <span class="kw">_</span>)| <span class="kw-2">*</span>id == queue_id).unwrap().<span class="number">1</span>;
-                    match_details.push(<span class="macro">serde_json::json!</span>({
-                        <span class="string">"champion_name"</span>: champion_name,
-                        <span class="string">"K/D/A"</span>: <span class="macro">format!</span>(<span class="string">"{}/{}/{}"</span>, kills, deaths, assists),
-                        <span class="string">"Farm"</span>: total_farm,
-                        <span class="string">"Result"</span>: game_result,
-                        <span class="string">"Duration"</span>: <span class="macro">format!</span>(<span class="string">"{}:{}"</span>, game_duration_minutes, game_duration_seconds),
-                        <span class="string">"time_elapsed"</span>: time_since_game_ended,
-                        <span class="string">"game_type"</span>: game_type
-                    }));
-                }
+    summoner_id: String,
+) -&gt; Vec&lt;Value&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>match_details = Vec::&lt;Value&gt;::new();
+    <span class="kw">for </span>id <span class="kw">in </span><span class="kw-2">&amp;</span>match_ids {
+        <span class="kw">let </span>info = get_matchs_info(<span class="kw-2">&amp;</span>Client::new(), id, <span class="kw-2">&amp;</span>ctx.data().riot_api_key)
+            .<span class="kw">await
+            </span>.unwrap();
+        <span class="kw">let </span>queue_id = info[<span class="string">"info"</span>][<span class="string">"queueId"</span>].as_i64().unwrap_or(-<span class="number">1</span>);
+        <span class="kw">if </span>is_valid_game_mode(queue_id) {
+            <span class="kw">let </span>participants = info[<span class="string">"info"</span>][<span class="string">"participants"</span>].as_array().unwrap();
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(participant) = participants
+                .iter()
+                .find(|p| p[<span class="string">"summonerId"</span>].as_str().unwrap() == summoner_id)
+            {
+                <span class="kw">let </span>champion_name = participant[<span class="string">"championName"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>);
+                <span class="kw">let </span>kills = participant[<span class="string">"kills"</span>].as_u64().unwrap_or(<span class="number">0</span>);
+                <span class="kw">let </span>deaths = participant[<span class="string">"deaths"</span>].as_u64().unwrap_or(<span class="number">0</span>);
+                <span class="kw">let </span>assists = participant[<span class="string">"assists"</span>].as_u64().unwrap_or(<span class="number">0</span>);
+                <span class="kw">let </span>total_farm = participant[<span class="string">"totalMinionsKilled"</span>].as_u64().unwrap_or(<span class="number">0</span>)
+                    + participant[<span class="string">"neutralMinionsKilled"</span>].as_u64().unwrap_or(<span class="number">0</span>);
+                <span class="kw">let </span>win = participant[<span class="string">"win"</span>].as_bool().unwrap_or(<span class="bool-val">false</span>);
+                <span class="kw">let </span>game_result = <span class="kw">if </span>win { <span class="string">"Victory" </span>} <span class="kw">else </span>{ <span class="string">"Defeat" </span>};
+                <span class="kw">let </span>game_duration = info[<span class="string">"info"</span>][<span class="string">"gameDuration"</span>].as_u64().unwrap_or(<span class="number">0</span>);
+                <span class="kw">let </span>game_end_timestamp = info[<span class="string">"info"</span>][<span class="string">"gameEndTimestamp"</span>].as_u64().unwrap_or(<span class="number">0</span>);
+                <span class="kw">let </span>time_since_game_ended = time_since_game_ended(game_end_timestamp);
+                <span class="kw">let </span>(game_duration_minutes, game_duration_seconds) = seconds_to_time(game_duration);
+                <span class="kw">let </span>game_type = QUEUE_ID_MAP
+                    .iter()
+                    .find(|(id, <span class="kw">_</span>)| <span class="kw-2">*</span>id == queue_id)
+                    .unwrap()
+                    .<span class="number">1</span>;
+                match_details.push(<span class="macro">serde_json::json!</span>({
+                    <span class="string">"champion_name"</span>: champion_name,
+                    <span class="string">"K/D/A"</span>: <span class="macro">format!</span>(<span class="string">"{}/{}/{}"</span>, kills, deaths, assists),
+                    <span class="string">"Farm"</span>: total_farm,
+                    <span class="string">"Result"</span>: game_result,
+                    <span class="string">"Duration"</span>: <span class="macro">format!</span>(<span class="string">"{}:{}"</span>, game_duration_minutes, game_duration_seconds),
+                    <span class="string">"time_elapsed"</span>: time_since_game_ended,
+                    <span class="string">"game_type"</span>: game_type
+                }));
             }
         }
-        match_details
-    }</code></pre></div></section></main></body></html>
+    }
+    match_details
+}
+</code></pre></div></section></main></body></html>

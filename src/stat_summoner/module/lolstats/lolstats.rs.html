@@ -146,18 +146,51 @@
 <a href="#146" id="146">146</a>
 <a href="#147" id="147">147</a>
 <a href="#148" id="148">148</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>poise::Modal;
-<span class="kw">use </span>reqwest::Client;
-<span class="kw">use </span>std::collections::HashMap;
-<span class="kw">use </span><span class="kw">crate</span>::models::data::Data;
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::embed::{create_embed_error, schedule_message_deletion};
+<span class="kw">use </span><span class="kw">crate</span>::models::data::{Data, EmojiId};
 <span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
 <span class="kw">use </span><span class="kw">crate</span>::models::modal::LolStatsModal;
 <span class="kw">use </span><span class="kw">crate</span>::models::region::Region;
-<span class="kw">use </span><span class="kw">crate</span>::riot_api::{get_puuid, get_summoner_id, get_rank_info, get_champions, get_matchs_id};
 <span class="kw">use </span><span class="kw">crate</span>::module::lolstats::utils::create_and_send_embed_lolstats;
-<span class="kw">use </span><span class="kw">crate</span>::embed::{create_embed_error, schedule_message_deletion};
+<span class="kw">use </span><span class="kw">crate</span>::riot_api::{get_champions, get_matchs_id, get_puuid, get_rank_info, get_summoner_id};
 <span class="kw">use </span><span class="kw">crate</span>::utils::{determine_solo_flex, region_to_string};
 <span class="kw">use </span>futures::join;
+<span class="kw">use </span>mongodb::Collection;
+<span class="kw">use </span>poise::Modal;
+<span class="kw">use </span>reqwest::Client;
+<span class="kw">use </span>std::collections::HashMap;
 
 <span class="doccomment">/// Fetches and displays LoL player stats based on user input.
 ///
@@ -193,45 +226,51 @@
 /// K/D/A: **10/2/8** | **200 CS** | Duration: **30:45**
 /// ⏳ Played: **2 hours ago**
 /// ```
-</span><span class="attr">#[poise::command(
-    slash_command,
-)]
+</span><span class="attr">#[poise::command(slash_command)]
 </span><span class="kw">pub async fn </span>lolstats(
     ctx: poise::ApplicationContext&lt;<span class="lifetime">'_</span>, Data, Error&gt;,
     <span class="attr">#[description = <span class="string">"Select your region"</span>] </span>region: Region,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
-        <span class="kw">let </span>modal_data: LolStatsModal = <span class="kw">match </span>LolStatsModal::execute(ctx).<span class="kw">await </span>{
-            <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(data)) =&gt; data,
-            <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) =&gt; {
-                <span class="kw">let </span>error_message = <span class="string">"Modal data not found."</span>;
-                <span class="kw">let </span>reply = ctx.send(create_embed_error(<span class="kw-2">&amp;</span>error_message)).<span class="kw">await</span><span class="question-mark">?</span>;
-                schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="kw">return </span><span class="prelude-val">Ok</span>(());
-            },
-            <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
-                <span class="kw">let </span>error_message = <span class="string">"Failed to retrieve modal data."</span>;
-                <span class="kw">let </span>reply = ctx.send(create_embed_error(<span class="kw-2">&amp;</span>error_message)).<span class="kw">await</span><span class="question-mark">?</span>;
-                schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="kw">return </span><span class="prelude-val">Ok</span>(());
-            },
-        };
+) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+    <span class="kw">let </span>modal_data: LolStatsModal = <span class="kw">match </span>LolStatsModal::execute(ctx).<span class="kw">await </span>{
+        <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(data)) =&gt; data,
+        <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) =&gt; {
+            <span class="kw">let </span>error_message = <span class="string">"Modal data not found."</span>;
+            <span class="kw">let </span>reply = ctx.send(create_embed_error(<span class="kw-2">&amp;</span>error_message)).<span class="kw">await</span><span class="question-mark">?</span>;
+            schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(());
+        }
+        <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
+            <span class="kw">let </span>error_message = <span class="string">"Failed to retrieve modal data."</span>;
+            <span class="kw">let </span>reply = ctx.send(create_embed_error(<span class="kw-2">&amp;</span>error_message)).<span class="kw">await</span><span class="question-mark">?</span>;
+            schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(());
+        }
+    };
 
-        <span class="kw">let </span>client = Client::new();
-        <span class="kw">let </span>game_name_space = modal_data.game_name.replace(<span class="string">" "</span>, <span class="string">"%20"</span>);
+    <span class="kw">let </span>client = Client::new();
+    <span class="kw">let </span>game_name_space = modal_data.game_name.replace(<span class="string">" "</span>, <span class="string">"%20"</span>);
 
-        <span class="kw">let </span>region_str = region_to_string(<span class="kw-2">&amp;</span>region);
+    <span class="kw">let </span>region_str = region_to_string(<span class="kw-2">&amp;</span>region);
 
-        <span class="kw">let </span>puuid = <span class="kw">match </span>get_puuid(<span class="kw-2">&amp;</span>client, <span class="kw-2">&amp;</span>game_name_space, <span class="kw-2">&amp;</span>modal_data.tag_line, <span class="kw-2">&amp;</span>ctx.data().riot_api_key).<span class="kw">await </span>{
-            <span class="prelude-val">Ok</span>(puuid) =&gt; puuid,
-            <span class="prelude-val">Err</span>(e) =&gt; {
-                <span class="kw">let </span>error_message = <span class="macro">format!</span>(<span class="string">"Error fetching PUUID: {}"</span>, e);
-                <span class="kw">let </span>reply = ctx.send(create_embed_error(<span class="kw-2">&amp;</span>error_message)).<span class="kw">await</span><span class="question-mark">?</span>;
-                schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="kw">return </span><span class="prelude-val">Ok</span>(());
-            }
-        };
+    <span class="kw">let </span>puuid = <span class="kw">match </span>get_puuid(
+        <span class="kw-2">&amp;</span>client,
+        <span class="kw-2">&amp;</span>game_name_space,
+        <span class="kw-2">&amp;</span>modal_data.tag_line,
+        <span class="kw-2">&amp;</span>ctx.data().riot_api_key,
+    )
+    .<span class="kw">await
+    </span>{
+        <span class="prelude-val">Ok</span>(puuid) =&gt; puuid,
+        <span class="prelude-val">Err</span>(e) =&gt; {
+            <span class="kw">let </span>error_message = <span class="macro">format!</span>(<span class="string">"Error fetching PUUID: {}"</span>, e);
+            <span class="kw">let </span>reply = ctx.send(create_embed_error(<span class="kw-2">&amp;</span>error_message)).<span class="kw">await</span><span class="question-mark">?</span>;
+            schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(());
+        }
+    };
 
-        <span class="kw">let </span>summoner_id = <span class="kw">match </span>get_summoner_id(<span class="kw-2">&amp;</span>client, <span class="kw-2">&amp;</span>region_str, <span class="kw-2">&amp;</span>puuid, <span class="kw-2">&amp;</span>ctx.data().riot_api_key).<span class="kw">await </span>{
+    <span class="kw">let </span>summoner_id =
+        <span class="kw">match </span>get_summoner_id(<span class="kw-2">&amp;</span>client, <span class="kw-2">&amp;</span>region_str, <span class="kw-2">&amp;</span>puuid, <span class="kw-2">&amp;</span>ctx.data().riot_api_key).<span class="kw">await </span>{
             <span class="prelude-val">Ok</span>(id) =&gt; id,
             <span class="prelude-val">Err</span>(e) =&gt; {
                 <span class="kw">let </span>error_message = <span class="macro">format!</span>(<span class="string">"Error fetching summoner ID: {}"</span>, e);
@@ -241,56 +280,82 @@
             }
         };
 
-        <span class="kw">let </span>(rank_info_res, champions_res, match_ids_res) = <span class="macro">join!</span>(
-            get_rank_info(<span class="kw-2">&amp;</span>client, <span class="kw-2">&amp;</span>region_str, <span class="kw-2">&amp;</span>summoner_id, <span class="kw-2">&amp;</span>ctx.data().riot_api_key),
-            get_champions(<span class="kw-2">&amp;</span>client, <span class="kw-2">&amp;</span>puuid, <span class="kw-2">&amp;</span>region_str, <span class="kw-2">&amp;</span>ctx.data().riot_api_key),
-            get_matchs_id(<span class="kw-2">&amp;</span>client, <span class="kw-2">&amp;</span>puuid, <span class="kw-2">&amp;</span>ctx.data().riot_api_key, <span class="number">5</span>)
-        );
+    <span class="kw">let </span>(rank_info_res, champions_res, match_ids_res) = <span class="macro">join!</span>(
+        get_rank_info(<span class="kw-2">&amp;</span>client, <span class="kw-2">&amp;</span>region_str, <span class="kw-2">&amp;</span>summoner_id, <span class="kw-2">&amp;</span>ctx.data().riot_api_key),
+        get_champions(<span class="kw-2">&amp;</span>client, <span class="kw-2">&amp;</span>puuid, <span class="kw-2">&amp;</span>region_str, <span class="kw-2">&amp;</span>ctx.data().riot_api_key),
+        get_matchs_id(<span class="kw-2">&amp;</span>client, <span class="kw-2">&amp;</span>puuid, <span class="kw-2">&amp;</span>ctx.data().riot_api_key, <span class="number">5</span>)
+    );
 
-        <span class="kw">let </span>rank_info = <span class="kw">match </span>rank_info_res {
-            <span class="prelude-val">Ok</span>(info) =&gt; info,
-            <span class="prelude-val">Err</span>(e) =&gt; {
-                <span class="kw">let </span>error_message = <span class="macro">format!</span>(<span class="string">"Error fetching rank info: {}"</span>, e);
-                <span class="kw">let </span>reply = ctx.send(create_embed_error(<span class="kw-2">&amp;</span>error_message)).<span class="kw">await</span><span class="question-mark">?</span>;
-                schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="kw">return </span><span class="prelude-val">Ok</span>(());
-            }
-        };
-
-        <span class="kw">let </span>champions = <span class="kw">match </span>champions_res {
-            <span class="prelude-val">Ok</span>(champs) =&gt; champs,
-            <span class="prelude-val">Err</span>(e) =&gt; {
-                <span class="kw">let </span>error_message = <span class="macro">format!</span>(<span class="string">"Error fetching champions: {}"</span>, e);
-                <span class="kw">let </span>reply = ctx.send(create_embed_error(<span class="kw-2">&amp;</span>error_message)).<span class="kw">await</span><span class="question-mark">?</span>;
-                schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="kw">return </span><span class="prelude-val">Ok</span>(());
-            }
-        };
-
-        <span class="kw">let </span>match_ids = <span class="kw">match </span>match_ids_res {
-            <span class="prelude-val">Ok</span>(ids) =&gt; ids,
-            <span class="prelude-val">Err</span>(e) =&gt; {
-                <span class="kw">let </span>error_message = <span class="macro">format!</span>(<span class="string">"Error fetching match IDs: {}"</span>, e);
-                <span class="kw">let </span>reply = ctx.send(create_embed_error(<span class="kw-2">&amp;</span>error_message)).<span class="kw">await</span><span class="question-mark">?</span>;
-                schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="kw">return </span><span class="prelude-val">Ok</span>(()); <span class="comment">// Retourne Ok(()) pour terminer proprement
-            </span>}
-        };
-
-        <span class="kw">let </span><span class="kw-2">mut </span>default_rank = HashMap::new();
-        default_rank.insert(<span class="string">"tier"</span>.to_string(), serde_json::Value::String(<span class="string">"Unranked"</span>.to_string()));
-        default_rank.insert(<span class="string">"rank"</span>.to_string(), serde_json::Value::String(<span class="string">""</span>.to_string()));
-        default_rank.insert(<span class="string">"leaguePoints"</span>.to_string(), serde_json::Value::Number(<span class="number">0</span>.into()));
-        default_rank.insert(<span class="string">"wins"</span>.to_string(), serde_json::Value::Number(<span class="number">0</span>.into()));
-        default_rank.insert(<span class="string">"losses"</span>.to_string(), serde_json::Value::Number(<span class="number">0</span>.into()));
-        default_rank.insert(<span class="string">"queueType"</span>.to_string(), serde_json::Value::String(<span class="string">""</span>.to_string()));
-
-        <span class="kw">let </span>(solo_rank, flex_rank) = determine_solo_flex(<span class="kw-2">&amp;</span>rank_info, <span class="kw-2">&amp;</span>default_rank);
-        <span class="kw">let </span>mongo_client: <span class="kw-2">&amp;</span>mongodb::Client = <span class="kw-2">&amp;</span>ctx.data().mongo_client;
-        <span class="kw">let </span>reply = create_and_send_embed_lolstats(<span class="kw-2">&amp;</span>modal_data, summoner_id, <span class="kw-2">&amp;</span>solo_rank, <span class="kw-2">&amp;</span>flex_rank, champions, match_ids, <span class="kw-2">&amp;</span>ctx, mongo_client).<span class="kw">await</span>;
-        <span class="kw">let </span>sent_message = ctx.send(reply).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = schedule_message_deletion(sent_message, ctx).<span class="kw">await </span>{
-            <span class="macro">eprintln!</span>(<span class="string">"Failed to schedule message deletion: {}"</span>, e);
+    <span class="kw">let </span>rank_info = <span class="kw">match </span>rank_info_res {
+        <span class="prelude-val">Ok</span>(info) =&gt; info,
+        <span class="prelude-val">Err</span>(e) =&gt; {
+            <span class="kw">let </span>error_message = <span class="macro">format!</span>(<span class="string">"Error fetching rank info: {}"</span>, e);
+            <span class="kw">let </span>reply = ctx.send(create_embed_error(<span class="kw-2">&amp;</span>error_message)).<span class="kw">await</span><span class="question-mark">?</span>;
+            schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(());
         }
-        <span class="prelude-val">Ok</span>(())
-    }</code></pre></div></section></main></body></html>
+    };
+
+    <span class="kw">let </span>champions = <span class="kw">match </span>champions_res {
+        <span class="prelude-val">Ok</span>(champs) =&gt; champs,
+        <span class="prelude-val">Err</span>(e) =&gt; {
+            <span class="kw">let </span>error_message = <span class="macro">format!</span>(<span class="string">"Error fetching champions: {}"</span>, e);
+            <span class="kw">let </span>reply = ctx.send(create_embed_error(<span class="kw-2">&amp;</span>error_message)).<span class="kw">await</span><span class="question-mark">?</span>;
+            schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(());
+        }
+    };
+
+    <span class="kw">let </span>match_ids = <span class="kw">match </span>match_ids_res {
+        <span class="prelude-val">Ok</span>(ids) =&gt; ids,
+        <span class="prelude-val">Err</span>(e) =&gt; {
+            <span class="kw">let </span>error_message = <span class="macro">format!</span>(<span class="string">"Error fetching match IDs: {}"</span>, e);
+            <span class="kw">let </span>reply = ctx.send(create_embed_error(<span class="kw-2">&amp;</span>error_message)).<span class="kw">await</span><span class="question-mark">?</span>;
+            schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(()); <span class="comment">// Retourne Ok(()) pour terminer proprement
+        </span>}
+    };
+
+    <span class="kw">let </span><span class="kw-2">mut </span>default_rank = HashMap::new();
+    default_rank.insert(
+        <span class="string">"tier"</span>.to_string(),
+        serde_json::Value::String(<span class="string">"Unranked"</span>.to_string()),
+    );
+    default_rank.insert(
+        <span class="string">"rank"</span>.to_string(),
+        serde_json::Value::String(<span class="string">""</span>.to_string()),
+    );
+    default_rank.insert(
+        <span class="string">"leaguePoints"</span>.to_string(),
+        serde_json::Value::Number(<span class="number">0</span>.into()),
+    );
+    default_rank.insert(<span class="string">"wins"</span>.to_string(), serde_json::Value::Number(<span class="number">0</span>.into()));
+    default_rank.insert(<span class="string">"losses"</span>.to_string(), serde_json::Value::Number(<span class="number">0</span>.into()));
+    default_rank.insert(
+        <span class="string">"queueType"</span>.to_string(),
+        serde_json::Value::String(<span class="string">""</span>.to_string()),
+    );
+
+    <span class="kw">let </span>(solo_rank, flex_rank) = determine_solo_flex(<span class="kw-2">&amp;</span>rank_info, <span class="kw-2">&amp;</span>default_rank);
+    <span class="kw">let </span>mongo_client: <span class="kw-2">&amp;</span>mongodb::Client = <span class="kw-2">&amp;</span>ctx.data().mongo_client;
+    <span class="kw">let </span>collection_emoji = mongo_client
+        .database(<span class="string">"stat-summoner"</span>)
+        .collection::&lt;EmojiId&gt;(<span class="string">"emojis_id"</span>);
+    <span class="kw">let </span>reply = create_and_send_embed_lolstats(
+        <span class="kw-2">&amp;</span>modal_data,
+        summoner_id,
+        <span class="kw-2">&amp;</span>solo_rank,
+        <span class="kw-2">&amp;</span>flex_rank,
+        champions,
+        match_ids,
+        <span class="kw-2">&amp;</span>ctx,
+        collection_emoji,
+    )
+    .<span class="kw">await</span>;
+    <span class="kw">let </span>sent_message = ctx.send(reply).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = schedule_message_deletion(sent_message, ctx).<span class="kw">await </span>{
+        <span class="macro">eprintln!</span>(<span class="string">"Failed to schedule message deletion: {}"</span>, e);
+    }
+    <span class="prelude-val">Ok</span>(())
+}
+</code></pre></div></section></main></body></html>

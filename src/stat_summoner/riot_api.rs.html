@@ -359,10 +359,18 @@
 <a href="#359" id="359">359</a>
 <a href="#360" id="360">360</a>
 <a href="#361" id="361">361</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>reqwest::Client;
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
+<span class="kw">use </span>reqwest::Client;
 <span class="kw">use </span>serde_json::Value;
 <span class="kw">use </span>std::collections::HashMap;
-<span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
 
 <span class="doccomment">/// ⚙️ **Function**: Fetches the player's PUUID (Player Unique Identifier) from the Riot API.
 ///
@@ -395,27 +403,31 @@
     client: <span class="kw-2">&amp;</span>Client,
     game_name_space: <span class="kw-2">&amp;</span>str,
     tag_line: <span class="kw-2">&amp;</span>str,
-    riot_api_key: <span class="kw-2">&amp;</span>str
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;String, Error&gt; {
-        <span class="kw">let </span>puuid_url = <span class="macro">format!</span>(
-            <span class="string">"https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{}/{}?api_key={}"</span>,
-            game_name_space, tag_line, riot_api_key
-        );
+    riot_api_key: <span class="kw-2">&amp;</span>str,
+) -&gt; <span class="prelude-ty">Result</span>&lt;String, Error&gt; {
+    <span class="kw">let </span>puuid_url = <span class="macro">format!</span>(
+        <span class="string">"https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{}/{}?api_key={}"</span>,
+        game_name_space, tag_line, riot_api_key
+    );
 
-        <span class="kw">let </span>response = client.get(<span class="kw-2">&amp;</span>puuid_url).send().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span>puuid_json: Value = response.json().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span>puuid = puuid_json.get(<span class="string">"puuid"</span>).and_then(Value::as_str).unwrap_or(<span class="string">""</span>).to_string();
+    <span class="kw">let </span>response = client.get(<span class="kw-2">&amp;</span>puuid_url).send().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span>puuid_json: Value = response.json().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span>puuid = puuid_json
+        .get(<span class="string">"puuid"</span>)
+        .and_then(Value::as_str)
+        .unwrap_or(<span class="string">""</span>)
+        .to_string();
 
-        <span class="kw">if </span>puuid.is_empty() {
-            <span class="prelude-val">Err</span>(<span class="string">"The player could not be found. Please verify that the region, game name, and tag line you provided are correct, and try again."</span>.into())
-        } <span class="kw">else </span>{
-            <span class="prelude-val">Ok</span>(puuid)
-        }
+    <span class="kw">if </span>puuid.is_empty() {
+        <span class="prelude-val">Err</span>(<span class="string">"The player could not be found. Please verify that the region, game name, and tag line you provided are correct, and try again."</span>.into())
+    } <span class="kw">else </span>{
+        <span class="prelude-val">Ok</span>(puuid)
     }
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Retrieves recent match IDs for a given player using their PUUID.
 ///
-/// This function sends a request to the Riot API to fetch the IDs of the player's recent matches based on their PUUID. 
+/// This function sends a request to the Riot API to fetch the IDs of the player's recent matches based on their PUUID.
 /// The match IDs are used to fetch detailed match data in subsequent API requests.
 ///
 /// # Parameters:
@@ -445,24 +457,22 @@
     client: <span class="kw-2">&amp;</span>Client,
     puuid: <span class="kw-2">&amp;</span>str,
     riot_api_key: <span class="kw-2">&amp;</span>str,
-    nb_match: u32
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;String&gt;, Error&gt; {
-        <span class="kw">let </span>matchs_url = <span class="macro">format!</span>(
+    nb_match: u32,
+) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;String&gt;, Error&gt; {
+    <span class="kw">let </span>matchs_url = <span class="macro">format!</span>(
             <span class="string">"https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/{}/ids?&amp;count={}&amp;api_key={}"</span>,
             puuid, nb_match.to_string(),  riot_api_key
         );
 
-        <span class="kw">let </span>response = client.get(<span class="kw-2">&amp;</span>matchs_url).send().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span>matchs_id: Vec&lt;String&gt; = response.json().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(matchs_id)
-    }
-
-
+    <span class="kw">let </span>response = client.get(<span class="kw-2">&amp;</span>matchs_url).send().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span>matchs_id: Vec&lt;String&gt; = response.json().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(matchs_id)
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Fetches the summoner ID for a player using their PUUID.
 ///
-/// This function sends a request to the Riot API to retrieve the summoner ID of a player, which is used for further 
-/// requests related to match history and player information. The summoner ID is specific to the player's account in 
+/// This function sends a request to the Riot API to retrieve the summoner ID of a player, which is used for further
+/// requests related to match history and player information. The summoner ID is specific to the player's account in
 /// the given region.
 ///
 /// # Parameters:
@@ -491,26 +501,30 @@
     client: <span class="kw-2">&amp;</span>Client,
     region_str: <span class="kw-2">&amp;</span>str,
     puuid: <span class="kw-2">&amp;</span>str,
-    riot_api_key: <span class="kw-2">&amp;</span>str
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;String, Error&gt; {
-        <span class="kw">let </span>summoner_url = <span class="macro">format!</span>(
-            <span class="string">"https://{}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{}?api_key={}"</span>,
-            region_str, puuid, riot_api_key
-        );
+    riot_api_key: <span class="kw-2">&amp;</span>str,
+) -&gt; <span class="prelude-ty">Result</span>&lt;String, Error&gt; {
+    <span class="kw">let </span>summoner_url = <span class="macro">format!</span>(
+        <span class="string">"https://{}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{}?api_key={}"</span>,
+        region_str, puuid, riot_api_key
+    );
 
-        <span class="kw">let </span>response = client.get(<span class="kw-2">&amp;</span>summoner_url).send().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span>summoner_json: Value = response.json().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span>summoner_id = summoner_json.get(<span class="string">"id"</span>).and_then(Value::as_str).unwrap_or(<span class="string">""</span>).to_string();
-        <span class="kw">if </span>summoner_id.is_empty() {
-            <span class="prelude-val">Err</span>(<span class="string">"Error retrieving summoner ID. Please verify that the region, game name, and tag line you provided are correct, and try again."</span>.into())
-        } <span class="kw">else </span>{
-            <span class="prelude-val">Ok</span>(summoner_id)
-        }
+    <span class="kw">let </span>response = client.get(<span class="kw-2">&amp;</span>summoner_url).send().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span>summoner_json: Value = response.json().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span>summoner_id = summoner_json
+        .get(<span class="string">"id"</span>)
+        .and_then(Value::as_str)
+        .unwrap_or(<span class="string">""</span>)
+        .to_string();
+    <span class="kw">if </span>summoner_id.is_empty() {
+        <span class="prelude-val">Err</span>(<span class="string">"Error retrieving summoner ID. Please verify that the region, game name, and tag line you provided are correct, and try again."</span>.into())
+    } <span class="kw">else </span>{
+        <span class="prelude-val">Ok</span>(summoner_id)
     }
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Fetches ranked information for a player using their summoner ID.
 ///
-/// This function sends a request to the Riot API to retrieve ranked information for a player, including their rank, 
+/// This function sends a request to the Riot API to retrieve ranked information for a player, including their rank,
 /// division, league points (LP), wins, and losses in different game modes (e.g., Solo/Duo, Flex).
 ///
 /// # Parameters:
@@ -556,15 +570,15 @@
     client: <span class="kw-2">&amp;</span>Client,
     region_str: <span class="kw-2">&amp;</span>str,
     summoner_id: <span class="kw-2">&amp;</span>str,
-    riot_api_key: <span class="kw-2">&amp;</span>str
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;HashMap&lt;String, Value&gt;&gt;, Error&gt; {
-        <span class="kw">let </span>rank_url = <span class="macro">format!</span>(
-            <span class="string">"https://{}.api.riotgames.com/lol/league/v4/entries/by-summoner/{}?api_key={}"</span>,
-            region_str, summoner_id, riot_api_key
-        );
-        <span class="kw">let </span>response = client.get(<span class="kw-2">&amp;</span>rank_url).send().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(response.json().<span class="kw">await</span><span class="question-mark">?</span>)
-    }
+    riot_api_key: <span class="kw-2">&amp;</span>str,
+) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;HashMap&lt;String, Value&gt;&gt;, Error&gt; {
+    <span class="kw">let </span>rank_url = <span class="macro">format!</span>(
+        <span class="string">"https://{}.api.riotgames.com/lol/league/v4/entries/by-summoner/{}?api_key={}"</span>,
+        region_str, summoner_id, riot_api_key
+    );
+    <span class="kw">let </span>response = client.get(<span class="kw-2">&amp;</span>rank_url).send().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(response.json().<span class="kw">await</span><span class="question-mark">?</span>)
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Retrieves the top 10 champions for a player based on champion mastery.
 ///
@@ -609,15 +623,15 @@
     client: <span class="kw-2">&amp;</span>Client,
     puuid: <span class="kw-2">&amp;</span>str,
     region: <span class="kw-2">&amp;</span>str,
-    riot_api_key: <span class="kw-2">&amp;</span>str
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;HashMap&lt;String, Value&gt;&gt;, Error&gt; {
-        <span class="kw">let </span>champions_url = <span class="macro">format!</span>(
+    riot_api_key: <span class="kw-2">&amp;</span>str,
+) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;HashMap&lt;String, Value&gt;&gt;, Error&gt; {
+    <span class="kw">let </span>champions_url = <span class="macro">format!</span>(
             <span class="string">"https://{}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{}/top?count=10&amp;api_key={}"</span>,
             region, puuid, riot_api_key
         );
-        <span class="kw">let </span>response = client.get(<span class="kw-2">&amp;</span>champions_url).send().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(response.json().<span class="kw">await</span><span class="question-mark">?</span>)
-    }
+    <span class="kw">let </span>response = client.get(<span class="kw-2">&amp;</span>champions_url).send().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(response.json().<span class="kw">await</span><span class="question-mark">?</span>)
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Fetches the latest champion data from Data Dragon (Riot's official static data service).
 ///
@@ -653,16 +667,19 @@
 ///   }
 /// }
 /// ```
-</span><span class="kw">pub async fn </span>open_dd_json(
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;Value, Error&gt; {
-        <span class="kw">let </span>dd_json = reqwest::get(<span class="string">"https://ddragon.leagueoflegends.com/cdn/14.18.1/data/fr_FR/champion.json"</span>).<span class="kw">await</span><span class="question-mark">?</span>.json().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(dd_json)
-    }
+</span><span class="kw">pub async fn </span>open_dd_json() -&gt; <span class="prelude-ty">Result</span>&lt;Value, Error&gt; {
+    <span class="kw">let </span>dd_json =
+        reqwest::get(<span class="string">"https://ddragon.leagueoflegends.com/cdn/14.18.1/data/fr_FR/champion.json"</span>)
+            .<span class="kw">await</span><span class="question-mark">?
+            </span>.json()
+            .<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(dd_json)
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Fetches detailed information about a specific match using the match ID.
 ///
-/// This function sends a request to the Riot API to retrieve detailed information about a match, such as 
-/// participants, game duration, result (win/loss), and other match-related statistics. The match data is returned 
+/// This function sends a request to the Riot API to retrieve detailed information about a match, such as
+/// participants, game duration, result (win/loss), and other match-related statistics. The match data is returned
 /// as a JSON object.
 ///
 /// # Parameters:
@@ -708,16 +725,15 @@
 </span><span class="kw">pub async fn </span>get_matchs_info(
     client: <span class="kw-2">&amp;</span>Client,
     match_id: <span class="kw-2">&amp;</span>str,
-    riot_api_key: <span class="kw-2">&amp;</span>str
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;Value, Error&gt; {
-        <span class="kw">let </span>matchs_info_url = <span class="macro">format!</span>(
-            <span class="string">"https://europe.api.riotgames.com/lol/match/v5/matches/{}?api_key={}"</span>,
-            match_id, riot_api_key
-        );
-        <span class="macro">eprint!</span>(<span class="string">"Fetching match data from {}...\n"</span>, matchs_info_url);
-        <span class="kw">let </span>response = client.get(<span class="kw-2">&amp;</span>matchs_info_url).send().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span>matchs_info: Value = response.json().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(matchs_info)
-    }
-
+    riot_api_key: <span class="kw-2">&amp;</span>str,
+) -&gt; <span class="prelude-ty">Result</span>&lt;Value, Error&gt; {
+    <span class="kw">let </span>matchs_info_url = <span class="macro">format!</span>(
+        <span class="string">"https://europe.api.riotgames.com/lol/match/v5/matches/{}?api_key={}"</span>,
+        match_id, riot_api_key
+    );
+    <span class="macro">eprint!</span>(<span class="string">"Fetching match data from {}...\n"</span>, matchs_info_url);
+    <span class="kw">let </span>response = client.get(<span class="kw-2">&amp;</span>matchs_info_url).send().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span>matchs_info: Value = response.json().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(matchs_info)
+}
 </code></pre></div></section></main></body></html>

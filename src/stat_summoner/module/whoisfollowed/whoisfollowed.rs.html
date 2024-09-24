@@ -62,11 +62,13 @@
 <a href="#62" id="62">62</a>
 <a href="#63" id="63">63</a>
 <a href="#64" id="64">64</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>mongodb::bson::doc;
-<span class="kw">use </span><span class="kw">crate</span>::embed::schedule_message_deletion;
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::embed::schedule_message_deletion;
 <span class="kw">use </span><span class="kw">crate</span>::models::data::{Data, SummonerFollowedData};
 <span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
-<span class="kw">use </span><span class="kw">crate</span>::module::whoisfollowed::utils::{get_data_followed_summoner, create_embed_followed_summoner};
+<span class="kw">use </span><span class="kw">crate</span>::module::whoisfollowed::utils::{
+    create_embed_followed_summoner, get_data_followed_summoner,
+};
+<span class="kw">use </span>mongodb::bson::doc;
 
 <span class="doccomment">/// Retrieves and displays the list of summoners followed in the current Discord guild.
 ///
@@ -109,21 +111,19 @@
 /// ```
 ///
 /// This command will create an embed showing all followed summoners in the guild where the command is run, along with their remaining follow time.
-</span><span class="attr">#[poise::command(
-    slash_command,
-)]
-</span><span class="kw">pub async fn </span>whoisfollowed(
-    ctx: poise::ApplicationContext&lt;<span class="lifetime">'_</span>, Data, Error&gt;,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
-        <span class="kw">let </span>mongo_client = <span class="kw-2">&amp;</span>ctx.data().mongo_client;
-        <span class="kw">let </span>collection = mongo_client
-            .database(<span class="string">"stat-summoner"</span>)
-            .collection::&lt;SummonerFollowedData&gt;(<span class="string">"follower_summoner"</span>);
+</span><span class="attr">#[poise::command(slash_command)]
+</span><span class="kw">pub async fn </span>whoisfollowed(ctx: poise::ApplicationContext&lt;<span class="lifetime">'_</span>, Data, Error&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+    <span class="kw">let </span>mongo_client = <span class="kw-2">&amp;</span>ctx.data().mongo_client;
+    <span class="kw">let </span>collection = mongo_client
+        .database(<span class="string">"stat-summoner"</span>)
+        .collection::&lt;SummonerFollowedData&gt;(<span class="string">"follower_summoner"</span>);
 
-        <span class="kw">let </span>guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(<span class="number">0</span>).to_string();
-        <span class="kw">let </span>followed_data = get_data_followed_summoner(collection, guild_id).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span>reply = ctx.send(create_embed_followed_summoner(followed_data)).<span class="kw">await</span><span class="question-mark">?</span>;
-        schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">return </span><span class="prelude-val">Ok</span>(());
-    }
+    <span class="kw">let </span>guild_id = ctx.guild_id().map(|id| id.get()).unwrap_or(<span class="number">0</span>).to_string();
+    <span class="kw">let </span>followed_data = get_data_followed_summoner(collection, guild_id).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span>reply = ctx
+        .send(create_embed_followed_summoner(followed_data))
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+    schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">return </span><span class="prelude-val">Ok</span>(());
+}
 </code></pre></div></section></main></body></html>

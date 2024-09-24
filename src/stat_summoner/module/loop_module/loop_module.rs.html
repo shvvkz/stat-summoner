@@ -339,22 +339,58 @@
 <a href="#339" id="339">339</a>
 <a href="#340" id="340">340</a>
 <a href="#341" id="341">341</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>chrono::Utc;
-<span class="kw">use </span><span class="kw">crate</span>::models::data::SummonerFollowedData;
-<span class="kw">use </span>poise::serenity_prelude::{<span class="self">self </span><span class="kw">as </span>serenity, CreateMessage};
-<span class="kw">use </span><span class="kw">crate</span>::riot_api::{get_matchs_id, get_matchs_info};
-<span class="kw">use </span>serenity::http::Http;
-<span class="kw">use </span><span class="kw">crate</span>::module::loop_module::utils::{get_match_details, create_embed_loop};
-<span class="kw">use </span>mongodb::{Client, Collection};
-<span class="kw">use </span>mongodb::bson::doc;
-<span class="kw">use </span>std::sync::Arc;
-<span class="kw">use </span>futures::StreamExt;
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::data::{EmojiId, SummonerFollowedData};
 <span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
+<span class="kw">use </span><span class="kw">crate</span>::module::loop_module::utils::{create_embed_loop, get_match_details};
+<span class="kw">use </span><span class="kw">crate</span>::riot_api::{get_matchs_id, get_matchs_info};
+<span class="kw">use </span>chrono::Utc;
+<span class="kw">use </span>futures::StreamExt;
+<span class="kw">use </span>mongodb::bson::doc;
+<span class="kw">use </span>mongodb::{Client, Collection};
+<span class="kw">use </span>poise::serenity_prelude::{<span class="self">self </span><span class="kw">as </span>serenity, CreateMessage};
+<span class="kw">use </span>serenity::http::Http;
+<span class="kw">use </span>std::sync::Arc;
 
 <span class="doccomment">/// ⚙️ **Function**: Checks the database for followed summoners and updates their information from the Riot API.
 ///
-/// This asynchronous function queries the MongoDB collection to check if there are any followed summoners. 
-/// If documents are present, it retrieves the followed summoners and processes each one by fetching the latest data from the Riot API. 
+/// This asynchronous function queries the MongoDB collection to check if there are any followed summoners.
+/// If documents are present, it retrieves the followed summoners and processes each one by fetching the latest data from the Riot API.
 /// The function is designed to keep the database in sync with real-time summoner information.
 ///
 /// # Parameters:
@@ -379,26 +415,34 @@
     mongo_client: <span class="kw-2">&amp;</span>Client,
     riot_api_key: <span class="kw-2">&amp;</span>str,
     http: Arc&lt;Http&gt;,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
-        <span class="kw">let </span>collection = mongo_client
-            .database(<span class="string">"stat-summoner"</span>)
-            .collection::&lt;SummonerFollowedData&gt;(<span class="string">"follower_summoner"</span>);
+) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+    <span class="kw">let </span>collection = mongo_client
+        .database(<span class="string">"stat-summoner"</span>)
+        .collection::&lt;SummonerFollowedData&gt;(<span class="string">"follower_summoner"</span>);
+    <span class="kw">let </span>collection_emoji = mongo_client
+        .database(<span class="string">"stat-summoner"</span>)
+        .collection::&lt;EmojiId&gt;(<span class="string">"emojis_id"</span>);
+    <span class="kw">let </span>count = collection.estimated_document_count().<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">let </span>count = collection.estimated_document_count().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">if </span>count &gt; <span class="number">0 </span>{
+        <span class="macro">println!</span>(<span class="string">"La base de données contient {} documents."</span>, count);
 
-        <span class="kw">if </span>count &gt; <span class="number">0 </span>{
-            <span class="macro">println!</span>(<span class="string">"La base de données contient {} documents."</span>, count);
+        <span class="kw">let </span>followed_summoners = get_followed_summoners(<span class="kw-2">&amp;</span>collection).<span class="kw">await</span><span class="question-mark">?</span>;
 
-            <span class="kw">let </span>followed_summoners = get_followed_summoners(<span class="kw-2">&amp;</span>collection).<span class="kw">await</span><span class="question-mark">?</span>;
-
-            <span class="kw">for </span>followed_summoner <span class="kw">in </span>followed_summoners {
-                process_followed_summoner(<span class="kw-2">&amp;</span>collection, <span class="kw-2">&amp;</span>followed_summoner, riot_api_key, http.clone())
-                    .<span class="kw">await</span><span class="question-mark">?</span>;
-            }
+        <span class="kw">for </span>followed_summoner <span class="kw">in </span>followed_summoners {
+            process_followed_summoner(
+                <span class="kw-2">&amp;</span>collection,
+                <span class="kw-2">&amp;</span>followed_summoner,
+                riot_api_key,
+                http.clone(),
+                collection_emoji.clone(),
+            )
+            .<span class="kw">await</span><span class="question-mark">?</span>;
         }
-
-        <span class="prelude-val">Ok</span>(())
     }
+
+    <span class="prelude-val">Ok</span>(())
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Retrieves all followed summoners from the database.
 ///
@@ -422,67 +466,79 @@
 /// ```
 </span><span class="kw">async fn </span>get_followed_summoners(
     collection: <span class="kw-2">&amp;</span>Collection&lt;SummonerFollowedData&gt;,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;SummonerFollowedData&gt;, mongodb::error::Error&gt; {
-        <span class="kw">let </span><span class="kw-2">mut </span>cursor = collection.find(<span class="macro">doc!</span> {}).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span><span class="kw-2">mut </span>followed_summoners = Vec::new();
+) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;SummonerFollowedData&gt;, mongodb::error::Error&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>cursor = collection.find(<span class="macro">doc!</span> {}).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>followed_summoners = Vec::new();
 
-        <span class="kw">while let </span><span class="prelude-val">Some</span>(result) = cursor.next().<span class="kw">await </span>{
-            <span class="kw">match </span>result {
-                <span class="prelude-val">Ok</span>(followed_summoner) =&gt; {
-                    followed_summoners.push(followed_summoner);
-                }
-                <span class="prelude-val">Err</span>(e) =&gt; {
-                    <span class="macro">println!</span>(<span class="string">"Erreur lors de la récupération d'un document : {:?}"</span>, e);
-                }
+    <span class="kw">while let </span><span class="prelude-val">Some</span>(result) = cursor.next().<span class="kw">await </span>{
+        <span class="kw">match </span>result {
+            <span class="prelude-val">Ok</span>(followed_summoner) =&gt; {
+                followed_summoners.push(followed_summoner);
+            }
+            <span class="prelude-val">Err</span>(e) =&gt; {
+                <span class="macro">println!</span>(<span class="string">"Erreur lors de la récupération d'un document : {:?}"</span>, e);
             }
         }
-
-        <span class="prelude-val">Ok</span>(followed_summoners)
     }
 
-<span class="doccomment">/// ⚙️ **Function**: Processes a followed summoner by checking if their follow time has expired or if they have new match data.
+    <span class="prelude-val">Ok</span>(followed_summoners)
+}
+
+<span class="doccomment">/// ⚙️ **Function**: Processes a followed summoner by checking if their follow time has expired or if they have played a new match.
 ///
-/// This asynchronous function processes an individual summoner from the database by first checking if the follow time
-/// has expired. If the follow time is up, the summoner is removed from the database. If the summoner is still being followed,
-/// the function checks for new match data and updates the database accordingly.
+/// This asynchronous function handles the logic for a followed summoner. It checks if the follow time has expired and removes the summoner from the database if necessary. If the follow time is still valid, it checks for new matches and updates the summoner's information accordingly.
 ///
 /// # Parameters:
-/// - `collection`: A reference to the MongoDB `Collection&lt;SummonerFollowedData&gt;`, used to query and update the database for followed summoners.
-/// - `followed_summoner`: A reference to a `SummonerFollowedData` struct, representing the summoner being processed.
-/// - `riot_api_key`: A string slice representing the Riot API key, used to make authorized API requests.
-/// - `http`: An `Arc&lt;Http&gt;` reference to the HTTP client for sending requests to the Riot API.
+/// - `collection`: A reference to a MongoDB `Collection&lt;SummonerFollowedData&gt;` that stores the followed summoners' data.
+/// - `followed_summoner`: A reference to a `SummonerFollowedData` struct containing the summoner's information, including their follow duration and last match details.
+/// - `riot_api_key`: A string slice containing the Riot Games API key for authenticating the API request.
+/// - `http`: An `Arc&lt;Http&gt;` object used to send messages via the Discord API.
+/// - `collection_emojis`: A MongoDB `Collection` containing emoji mappings, used to enrich the Discord embeds with custom emojis for roles and champions.
 ///
 /// # Returns:
-/// - `Result&lt;(), Error&gt;`: Returns an empty result if the operation is successful, or an error if any part of the process fails.
+/// - `Result&lt;(), Error&gt;`: Returns `Ok(())` if the summoner was successfully processed (either by removing them from the database or updating their match info), or an error if something went wrong.
 ///
 /// # Example:
-/// This function is called as part of the update process for followed summoners:
+/// This function is typically called as part of a loop or scheduled task that checks the status of followed summoners:
 ///
 /// ```rust
-/// process_followed_summoner(&amp;collection, &amp;followed_summoner, riot_api_key, http.clone()).await?;
+/// let result = process_followed_summoner(collection, &amp;followed_summoner, riot_api_key, http.clone(), collection_emojis).await;
+/// if result.is_err() {
+///     // Handle error (e.g., log failure or retry)
+/// }
 /// ```
 ///
 /// # Notes:
-/// - If the follow time for the summoner has expired, the summoner is removed from the database by calling `delete_follower`.
-/// - If the follow time has not expired, the function checks for new matches and updates the database using `update_follower_if_new_match`.
+/// - The function begins by checking if the follow time for the summoner has expired using the `is_follow_time_expired` function.
+/// - If the follow time has expired, the summoner is removed from the MongoDB collection by calling `delete_follower`.
+/// - If the summoner is still being followed, the function calls `update_follower_if_new_match` to check for new matches and potentially send an update to the associated Discord channel.
+/// - This function ensures that summoners are only followed for the specified duration and that Discord channels are updated with relevant match information during the follow period.
 </span><span class="kw">async fn </span>process_followed_summoner(
     collection: <span class="kw-2">&amp;</span>Collection&lt;SummonerFollowedData&gt;,
     followed_summoner: <span class="kw-2">&amp;</span>SummonerFollowedData,
     riot_api_key: <span class="kw-2">&amp;</span>str,
     http: Arc&lt;Http&gt;,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
-        <span class="kw">if </span>is_follow_time_expired(followed_summoner) {
-            delete_follower(collection, followed_summoner).<span class="kw">await</span><span class="question-mark">?</span>;
-        } <span class="kw">else </span>{
-            update_follower_if_new_match(collection, followed_summoner, riot_api_key, http).<span class="kw">await</span><span class="question-mark">?</span>;
-        }
-        <span class="prelude-val">Ok</span>(())
+    collection_emojis: Collection&lt;EmojiId&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+    <span class="kw">if </span>is_follow_time_expired(followed_summoner) {
+        delete_follower(collection, followed_summoner).<span class="kw">await</span><span class="question-mark">?</span>;
+    } <span class="kw">else </span>{
+        update_follower_if_new_match(
+            collection,
+            followed_summoner,
+            riot_api_key,
+            http,
+            collection_emojis,
+        )
+        .<span class="kw">await</span><span class="question-mark">?</span>;
     }
+    <span class="prelude-val">Ok</span>(())
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Determines if the follow time for a summoner has expired.
 ///
-/// This function checks whether the current timestamp exceeds the stored follow end time for a summoner. 
-/// It parses the `time_end_follow` field from the `SummonerFollowedData` struct, compares it to the current UTC timestamp, 
+/// This function checks whether the current timestamp exceeds the stored follow end time for a summoner.
+/// It parses the `time_end_follow` field from the `SummonerFollowedData` struct, compares it to the current UTC timestamp,
 /// and returns `true` if the follow time has expired, or `false` otherwise.
 ///
 /// # Parameters:
@@ -503,13 +559,14 @@
 ///
 /// # Notes:
 /// - The function uses UTC time for comparison and assumes the `time_end_follow` is a valid timestamp that can be parsed into an `i64`. If parsing fails, it defaults to 0, which will always result in `true`.
-</span><span class="kw">fn </span>is_follow_time_expired(
-    followed_summoner: <span class="kw-2">&amp;</span>SummonerFollowedData
-    ) -&gt; bool {
-        <span class="kw">let </span>time_end_follow = followed_summoner.time_end_follow.parse::&lt;i64&gt;().unwrap_or(<span class="number">0</span>);
-        <span class="kw">let </span>current_timestamp = Utc::now().timestamp();
-        current_timestamp &gt; time_end_follow
-    }
+</span><span class="kw">fn </span>is_follow_time_expired(followed_summoner: <span class="kw-2">&amp;</span>SummonerFollowedData) -&gt; bool {
+    <span class="kw">let </span>time_end_follow = followed_summoner
+        .time_end_follow
+        .parse::&lt;i64&gt;()
+        .unwrap_or(<span class="number">0</span>);
+    <span class="kw">let </span>current_timestamp = Utc::now().timestamp();
+    current_timestamp &gt; time_end_follow
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Deletes a followed summoner from the database.
 ///
@@ -536,75 +593,83 @@
 </span><span class="kw">async fn </span>delete_follower(
     collection: <span class="kw-2">&amp;</span>Collection&lt;SummonerFollowedData&gt;,
     followed_summoner: <span class="kw-2">&amp;</span>SummonerFollowedData,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;(), mongodb::error::Error&gt; {
-        <span class="macro">eprintln!</span>(<span class="string">"Suppression de {}"</span>, followed_summoner.puuid);
-        collection
-            .delete_one(<span class="macro">doc!</span> { <span class="string">"puuid"</span>: <span class="kw-2">&amp;</span>followed_summoner.puuid, <span class="string">"guild_id"</span>: <span class="kw-2">&amp;</span>followed_summoner.guild_id })
-            .<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(())
-    }
+) -&gt; <span class="prelude-ty">Result</span>&lt;(), mongodb::error::Error&gt; {
+    <span class="macro">eprintln!</span>(<span class="string">"Suppression de {}"</span>, followed_summoner.puuid);
+    collection
+        .delete_one(
+            <span class="macro">doc!</span> { <span class="string">"puuid"</span>: <span class="kw-2">&amp;</span>followed_summoner.puuid, <span class="string">"guild_id"</span>: <span class="kw-2">&amp;</span>followed_summoner.guild_id },
+        )
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(())
+}
 
-<span class="doccomment">/// ⚙️ **Function**: Updates a followed summoner's last match ID if a new match is found, and sends the update to Discord.
+<span class="doccomment">/// ⚙️ **Function**: Updates a followed summoner's last match ID and sends a Discord update if a new match is detected.
 ///
-/// This asynchronous function checks if the followed summoner has played a new match by comparing the `last_match_id` 
-/// stored in the database with the latest match ID fetched from the Riot API. If a new match is found, the function updates 
-/// the `last_match_id` in the MongoDB collection and sends the match update to Discord.
+/// This asynchronous function checks if a followed summoner has played a new match. If a new match is detected,
+/// it updates the summoner's last match ID in the MongoDB collection and sends a match update to the appropriate Discord channel.
 ///
 /// # Parameters:
-/// - `collection`: A reference to the MongoDB `Collection&lt;SummonerFollowedData&gt;`, used to query and update the summoner's last match ID.
-/// - `followed_summoner`: A reference to a `SummonerFollowedData` struct, representing the summoner being processed.
-/// - `riot_api_key`: A string slice representing the Riot API key, required to fetch the summoner's match history.
-/// - `http`: An `Arc&lt;Http&gt;` reference to the HTTP client used to send match updates to Discord.
+/// - `collection`: A reference to a MongoDB `Collection&lt;SummonerFollowedData&gt;` that stores the followed summoners' data.
+/// - `followed_summoner`: A reference to a `SummonerFollowedData` struct containing the summoner's information, including their PUUID, summoner ID, and last match ID.
+/// - `riot_api_key`: A string slice containing the Riot Games API key for authenticating the API request.
+/// - `http`: An `Arc&lt;Http&gt;` object used to send messages via the Discord API.
+/// - `collection_emojis`: A MongoDB `Collection` containing emoji mappings, used to enhance the Discord embed with custom emojis for roles and champions.
 ///
 /// # Returns:
-/// - `Result&lt;(), Error&gt;`: Returns an empty result if successful, or an error if the update or match retrieval fails.
+/// - `Result&lt;(), Error&gt;`: Returns `Ok(())` if the last match ID was successfully updated and the match update was sent to Discord, or an error if something went wrong.
 ///
 /// # Example:
-/// This function is used to keep the summoner's match data up to date in the database and notify the Discord server if a new match is played:
+/// This function is typically called periodically to check if a followed summoner has played a new match:
 ///
 /// ```rust
-/// update_follower_if_new_match(&amp;collection, &amp;followed_summoner, riot_api_key, http.clone()).await?;
+/// let result = update_follower_if_new_match(collection, &amp;followed_summoner, riot_api_key, http.clone(), collection_emojis).await;
+/// if result.is_err() {
+///     // Handle error (e.g., log failure or retry)
+/// }
 /// ```
 ///
 /// # Notes:
-/// - The function retrieves the latest match ID from Riot's API by calling `get_latest_match_id`. If the match ID differs from the one stored in the database, the `last_match_id` is updated.
-/// - If a new match is found, the function sends a notification to Discord via `send_match_update_to_discord`.
-/// - The summoner's data in the database is updated using the `$set` operator to modify the `last_match_id` field.
+/// - The function begins by creating an HTTP client using `reqwest` and fetching the latest match ID for the summoner using the `get_latest_match_id` function.
+/// - If the new match ID is different from the stored `last_match_id`, the function updates the MongoDB collection with the new match ID.
+/// - Once the database is updated, the function calls `send_match_update_to_discord` to send a match update to the Discord channel associated with the summoner.
+/// - This function ensures that the Discord server is notified whenever the summoner completes a new match, keeping followers updated in real time.
 </span><span class="kw">async fn </span>update_follower_if_new_match(
     collection: <span class="kw-2">&amp;</span>Collection&lt;SummonerFollowedData&gt;,
     followed_summoner: <span class="kw-2">&amp;</span>SummonerFollowedData,
     riot_api_key: <span class="kw-2">&amp;</span>str,
     http: Arc&lt;Http&gt;,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
-        <span class="kw">let </span>puuid = <span class="kw-2">&amp;</span>followed_summoner.puuid;
-        <span class="kw">let </span>summoner_id = <span class="kw-2">&amp;</span>followed_summoner.summoner_id;
-        <span class="kw">let </span>last_match_id = <span class="kw-2">&amp;</span>followed_summoner.last_match_id;
-        <span class="kw">let </span>guild_id = <span class="kw-2">&amp;</span>followed_summoner.guild_id;
-        <span class="kw">let </span>client = reqwest::Client::new();
+    collection_emojis: Collection&lt;EmojiId&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+    <span class="kw">let </span>puuid = <span class="kw-2">&amp;</span>followed_summoner.puuid;
+    <span class="kw">let </span>summoner_id = <span class="kw-2">&amp;</span>followed_summoner.summoner_id;
+    <span class="kw">let </span>last_match_id = <span class="kw-2">&amp;</span>followed_summoner.last_match_id;
+    <span class="kw">let </span>guild_id = <span class="kw-2">&amp;</span>followed_summoner.guild_id;
+    <span class="kw">let </span>client = reqwest::Client::new();
 
-        <span class="kw">let </span>match_id_from_riot = get_latest_match_id(<span class="kw-2">&amp;</span>client, puuid, riot_api_key).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span>match_id_from_riot = get_latest_match_id(<span class="kw-2">&amp;</span>client, puuid, riot_api_key).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">if </span>last_match_id != <span class="kw-2">&amp;</span>match_id_from_riot {
-            collection
-                .update_one(
-                    <span class="macro">doc!</span> {
-                        <span class="string">"puuid"</span>: puuid,
-                        <span class="string">"guild_id"</span>: guild_id
-                        },
-                    <span class="macro">doc!</span> { <span class="string">"$set"</span>: { <span class="string">"last_match_id"</span>: <span class="kw-2">&amp;</span>match_id_from_riot } },
-                )
-                .<span class="kw">await</span><span class="question-mark">?</span>;
-            send_match_update_to_discord(
-                followed_summoner,
-                summoner_id,
-                <span class="kw-2">&amp;</span>match_id_from_riot,
-                riot_api_key,
-                http,
+    <span class="kw">if </span>last_match_id != <span class="kw-2">&amp;</span>match_id_from_riot {
+        collection
+            .update_one(
+                <span class="macro">doc!</span> {
+                <span class="string">"puuid"</span>: puuid,
+                <span class="string">"guild_id"</span>: guild_id
+                },
+                <span class="macro">doc!</span> { <span class="string">"$set"</span>: { <span class="string">"last_match_id"</span>: <span class="kw-2">&amp;</span>match_id_from_riot } },
             )
             .<span class="kw">await</span><span class="question-mark">?</span>;
-        }
-        <span class="prelude-val">Ok</span>(())
+        send_match_update_to_discord(
+            followed_summoner,
+            summoner_id,
+            <span class="kw-2">&amp;</span>match_id_from_riot,
+            riot_api_key,
+            http,
+            collection_emojis,
+        )
+        .<span class="kw">await</span><span class="question-mark">?</span>;
     }
+    <span class="prelude-val">Ok</span>(())
+}
 
 <span class="doccomment">/// ⚙️ **Function**: Fetches the latest match ID for a given summoner using their PUUID.
 ///
@@ -633,51 +698,58 @@
     client: <span class="kw-2">&amp;</span>reqwest::Client,
     puuid: <span class="kw-2">&amp;</span>str,
     riot_api_key: <span class="kw-2">&amp;</span>str,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;String, Error&gt; {
-        <span class="kw">let </span>matches = get_matchs_id(client, puuid, riot_api_key, <span class="number">1</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(matches[<span class="number">0</span>].clone())
-    }
+) -&gt; <span class="prelude-ty">Result</span>&lt;String, Error&gt; {
+    <span class="kw">let </span>matches = get_matchs_id(client, puuid, riot_api_key, <span class="number">1</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(matches[<span class="number">0</span>].clone())
+}
 
-<span class="doccomment">/// ⚙️ **Function**: Sends a match update to a Discord channel after a new game is detected for a followed summoner.
+<span class="doccomment">/// ⚙️ **Function**: Sends a match update to a specific Discord channel for a followed summoner.
 ///
-/// This asynchronous function retrieves match details from the Riot API for the given `match_id` and formats them into a Discord message embed. 
-/// The function then sends this embed to the specified Discord channel associated with the `followed_summoner`.
+/// This asynchronous function fetches match information for a followed summoner from the Riot API,
+/// formats the details into an embed, and sends the embed as a message to the specified Discord channel.
 ///
 /// # Parameters:
-/// - `followed_summoner`: A reference to a `SummonerFollowedData` struct, representing the summoner whose match update is being sent.
-/// - `summoner_id`: A string slice representing the summoner's ID, used to extract specific match details.
-/// - `match_id`: A string slice representing the match ID for the latest game, used to query the Riot API for match details.
-/// - `riot_api_key`: A string slice representing the Riot API key, required for authorized requests to the Riot API.
-/// - `http`: An `Arc&lt;Http&gt;` reference to the HTTP client used to send the message to the Discord channel.
+/// - `followed_summoner`: A reference to a `SummonerFollowedData` struct, which contains the summoner's name and the ID of the Discord channel to which the match update should be sent.
+/// - `summoner_id`: A string slice representing the summoner's ID, used to identify the player's stats in the match.
+/// - `match_id`: A string slice representing the match ID, used to fetch match details from the Riot API.
+/// - `riot_api_key`: A string slice containing the Riot Games API key for authenticating the API request.
+/// - `http`: An `Arc&lt;Http&gt;` object used to send messages via the Discord API.
+/// - `collection_emojis`: A MongoDB `Collection` containing emoji mappings, used to add custom emojis to the embed for roles and champions.
 ///
 /// # Returns:
-/// - `Result&lt;(), Error&gt;`: Returns an empty result if the message is successfully sent, or an error if the operation fails.
+/// - `Result&lt;(), Error&gt;`: Returns `Ok(())` if the match update was successfully sent to the Discord channel, or an error if something went wrong.
 ///
 /// # Example:
-/// This function is called after detecting a new match for a summoner, and it posts a match summary in the configured Discord channel:
+/// This function is typically called after detecting that a followed summoner has completed a match:
 ///
 /// ```rust
-/// send_match_update_to_discord(&amp;followed_summoner, summoner_id, match_id, riot_api_key, http.clone()).await?;
+/// let result = send_match_update_to_discord(&amp;followed_summoner, summoner_id, match_id, riot_api_key, http.clone(), collection_emojis).await;
+/// if result.is_err() {
+///     // Handle error (e.g., log failure or retry)
+/// }
 /// ```
 ///
 /// # Notes:
-/// - The function retrieves match information using `get_matchs_info` and extracts relevant details for the specified summoner using `get_match_details`.
-/// - It builds a Discord message embed using `create_embed_loop` and sends the message to the Discord channel associated with the summoner's `channel_id`.
-/// - The function sends the message asynchronously using Serenity's `send_message` method for the given `ChannelId`.
+/// - The function creates an HTTP client using `reqwest` to fetch match information from the Riot API.
+/// - It retrieves detailed match data using the `get_matchs_info` and `get_match_details` functions.
+/// - The function constructs a `CreateEmbed` object using the `create_embed_loop` function, which formats match statistics and adds emojis.
+/// - The embed is sent as a message to the Discord channel specified in the `followed_summoner` struct.
+/// - The Discord message is built using `CreateMessage` and sent asynchronously to the appropriate channel using the Discord API.
 </span><span class="kw">async fn </span>send_match_update_to_discord(
     followed_summoner: <span class="kw-2">&amp;</span>SummonerFollowedData,
     summoner_id: <span class="kw-2">&amp;</span>str,
     match_id: <span class="kw-2">&amp;</span>str,
     riot_api_key: <span class="kw-2">&amp;</span>str,
     http: Arc&lt;Http&gt;,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
-        <span class="kw">let </span>client = reqwest::Client::new();
-        <span class="kw">let </span>info = get_matchs_info(<span class="kw-2">&amp;</span>client, match_id, riot_api_key).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span>info_json = get_match_details(<span class="kw-2">&amp;</span>info, summoner_id).unwrap();
-        <span class="kw">let </span>channel_id = serenity::model::id::ChannelId::new(followed_summoner.channel_id);
-        <span class="kw">let </span>embed = create_embed_loop(<span class="kw-2">&amp;</span>info_json, <span class="kw-2">&amp;</span>followed_summoner.name);
-        <span class="kw">let </span>builder = CreateMessage::new().add_embed(embed);
-        <span class="kw">let _ </span>= channel_id.send_message(<span class="kw-2">&amp;</span>http, builder).<span class="kw">await</span>;
-        <span class="prelude-val">Ok</span>(())
-    }
+    collection_emojis: Collection&lt;EmojiId&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+    <span class="kw">let </span>client = reqwest::Client::new();
+    <span class="kw">let </span>info = get_matchs_info(<span class="kw-2">&amp;</span>client, match_id, riot_api_key).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span>info_json = get_match_details(<span class="kw-2">&amp;</span>info, summoner_id).unwrap();
+    <span class="kw">let </span>channel_id = serenity::model::id::ChannelId::new(followed_summoner.channel_id);
+    <span class="kw">let </span>embed = create_embed_loop(<span class="kw-2">&amp;</span>info_json, <span class="kw-2">&amp;</span>followed_summoner.name, collection_emojis).<span class="kw">await</span>;
+    <span class="kw">let </span>builder = CreateMessage::new().add_embed(embed);
+    <span class="kw">let _ </span>= channel_id.send_message(<span class="kw-2">&amp;</span>http, builder).<span class="kw">await</span>;
+    <span class="prelude-val">Ok</span>(())
+}
 </code></pre></div></section></main></body></html>

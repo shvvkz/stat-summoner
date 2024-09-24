@@ -278,12 +278,81 @@
 <a href="#278" id="278">278</a>
 <a href="#279" id="279">279</a>
 <a href="#280" id="280">280</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>std::collections::HashMap;
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+</pre></div><pre class="rust"><code><span class="kw">use crate</span>::{models::data::EmojiId, utils::<span class="kw-2">*</span>};
+<span class="kw">use </span>mongodb::Collection;
 <span class="kw">use </span>poise::serenity_prelude::CreateEmbed;
 <span class="kw">use </span>serde_json::Value;
-<span class="kw">use </span><span class="kw">crate</span>::utils::<span class="kw-2">*</span>;
-
-
+<span class="kw">use </span>std::collections::HashMap;
 
 <span class="doccomment">/// ⚙️ **Function**: Extracts relevant match details for a given summoner from the match information.
 ///
@@ -314,11 +383,11 @@
 /// - It generates JSON-formatted role matchups comparing stats between the summoner's team and their opponents for each role.
 </span><span class="kw">pub fn </span>get_match_details(match_info: <span class="kw-2">&amp;</span>Value, summoner_id: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;Value&gt; {
     <span class="kw">let </span>queue_id = match_info[<span class="string">"info"</span>][<span class="string">"queueId"</span>].as_i64().unwrap_or(-<span class="number">1</span>);
-    <span class="kw">let </span>(game_duration_minutes, game_duration_secondes) = seconds_to_time(match_info[<span class="string">"info"</span>][<span class="string">"gameDuration"</span>].as_u64().unwrap_or(<span class="number">0</span>));
+    <span class="kw">let </span>(game_duration_minutes, game_duration_secondes) =
+        seconds_to_time(match_info[<span class="string">"info"</span>][<span class="string">"gameDuration"</span>].as_u64().unwrap_or(<span class="number">0</span>));
     <span class="kw">let </span>game_duration_string = <span class="macro">format!</span>(<span class="string">"{}:{}"</span>, game_duration_minutes, game_duration_secondes);
-    <span class="kw">if </span>!is_valid_game_mode(queue_id) {
-        <span class="kw">return </span><span class="prelude-val">None</span>;
-    }
+    <span class="comment">// utilise QUEUE_ID_MAP qui est une constante dans models/constants.rs qui contient une liste de game modes faisant correspondre id -&gt; game mode en str
+    </span><span class="kw">let </span>game_mode = get_game_mode(queue_id);
 
     <span class="kw">let </span>participants = match_info[<span class="string">"info"</span>][<span class="string">"participants"</span>].as_array()<span class="question-mark">?</span>;
     <span class="kw">let </span>participant = participants
@@ -364,47 +433,71 @@
     }
 
     <span class="prelude-val">Some</span>(<span class="macro">serde_json::json!</span>({
+        <span class="string">"gameMode"</span>: game_mode,
         <span class="string">"gameResult"</span>: game_result,
         <span class="string">"gameDuration"</span>: game_duration_string,
         <span class="string">"matchups"</span>: matchups
     }))
 }
 
-<span class="doccomment">/// ⚙️ **Function**: Creates a Discord embed for match updates, displaying detailed stats for each role in a game.
+<span class="doccomment">/// ⚙️ **Function**: Creates a detailed embed for a player's match performance in Discord.
 ///
-/// This function generates an embed to be sent to a Discord channel, summarizing the results of a League of Legends match. 
-/// It organizes player statistics by role (TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY), and compares the stats of the summoner's team 
-/// and the enemy team in each role, using emojis and formatted data for a polished presentation.
+/// This asynchronous function generates a `CreateEmbed` object that includes detailed statistics
+/// of a player's match, such as the game mode, result, duration, and a role-by-role comparison
+/// of the player's team versus the enemy team. The embed is enriched with emojis and formatted
+/// data to make it visually appealing for Discord.
 ///
 /// # Parameters:
-/// - `info_json`: A reference to a `serde_json::Value` object that contains detailed match information, including game results and participant stats.
-/// - `player_name`: A string slice representing the name of the player for whom the match stats are being reported.
+/// - `info_json`: A reference to a `Value` (from the `serde_json` crate) containing the match data fetched from the Riot API.
+/// - `player_name`: A string slice representing the player's name, used for the embed's title.
+/// - `collection_emoji`: A MongoDB `Collection` containing emoji mappings, which are used to enhance the embed with role and champion-specific emojis.
 ///
 /// # Returns:
-/// - `CreateEmbed`: Returns a `CreateEmbed` object that contains the formatted match summary, ready to be sent to a Discord channel.
+/// - `CreateEmbed`: Returns a `CreateEmbed` object containing the formatted match data, including role-based comparisons and game metadata, ready to be sent to a Discord channel.
 ///
 /// # Example:
-/// This function is typically used to create and send an embed containing match results after a game:
+/// This function is typically used to send detailed match information to a Discord channel:
 ///
 /// ```rust
-/// let embed = create_embed_loop(&amp;info_json, player_name);
-/// channel_id.send_message(&amp;http, CreateMessage::new().add_embed(embed)).await?;
+/// let embed = create_embed_loop(&amp;info_json, "PlayerName", collection_emoji).await;
+/// // Send the embed to a Discord channel using your bot's message-sending logic
 /// ```
 ///
 /// # Notes:
-/// - The embed includes the game result (Victory or Defeat), the match duration, and the current UTC time.
-/// - The stats for each role include K/D/A (kills, deaths, assists), CS (creep score), total gold earned, and gold per minute, for both the player's team and the enemy team.
-/// - Emojis and icons are used to visually differentiate between roles, adding clarity to the embed presentation.
-</span><span class="kw">pub fn </span>create_embed_loop(info_json: <span class="kw-2">&amp;</span>Value, player_name: <span class="kw-2">&amp;</span>str) -&gt; CreateEmbed {
+/// - The function begins by extracting key game metadata (game mode, result, and duration) from `info_json`.
+/// - Based on the match result, it selects appropriate emojis and colors for the embed.
+/// - The function then constructs the title and proceeds to iterate over the available role-based matchups, comparing the stats of the player's team with the enemy team for each role (TOP, JUNGLE, MIDDLE, BOTTOM, UTILITY).
+/// - Role and champion names are replaced by their corresponding emojis from the `collection_emoji`, retrieved using the `get_emoji` function.
+/// - The function formats team and enemy stats (kills, deaths, assists, CS, gold, vision score) for each role and adds them as fields in the embed.
+/// - It returns a fully constructed `CreateEmbed` ready to be sent in a Discord message.
+</span><span class="kw">pub async fn </span>create_embed_loop(
+    info_json: <span class="kw-2">&amp;</span>Value,
+    player_name: <span class="kw-2">&amp;</span>str,
+    collection_emoji: Collection&lt;EmojiId&gt;,
+) -&gt; CreateEmbed {
+    <span class="kw">let </span>game_mode = info_json[<span class="string">"gameMode"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>);
     <span class="kw">let </span>game_result = info_json[<span class="string">"gameResult"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>);
-    <span class="kw">let </span>game_duration= info_json[<span class="string">"gameDuration"</span>].as_str().unwrap_or(<span class="string">"00:00"</span>);
-    <span class="kw">let </span>game_result_emoji = <span class="kw">if </span>game_result == <span class="string">"Victory" </span>{ <span class="string">"🏆" </span>} <span class="kw">else </span>{ <span class="string">"❌" </span>};
-    <span class="kw">let </span>color: i32 = <span class="kw">if </span>game_result == <span class="string">"Victory" </span>{ <span class="number">0x00ff00 </span>} <span class="kw">else </span>{ <span class="number">0xff0000 </span>};
+    <span class="kw">let </span>game_duration = info_json[<span class="string">"gameDuration"</span>].as_str().unwrap_or(<span class="string">"00:00"</span>);
+    <span class="kw">let </span>game_result_emoji = <span class="kw">if </span>game_result == <span class="string">"Victory" </span>{
+        <span class="string">"🏆"
+    </span>} <span class="kw">else </span>{
+        <span class="string">"❌"
+    </span>};
+    <span class="kw">let </span>game_result_thumbnail = <span class="kw">if </span>game_result == <span class="string">"Victory" </span>{
+        <span class="string">"https://i.postimg.cc/CxwjnWVk/pngegg.png"
+    </span>} <span class="kw">else </span>{
+        <span class="string">"https://i.postimg.cc/XJBF0WwS/pngwing-com.png"
+    </span>};
+    <span class="kw">let </span>color: i32 = <span class="kw">if </span>game_result == <span class="string">"Victory" </span>{
+        <span class="number">0x00ff00
+    </span>} <span class="kw">else </span>{
+        <span class="number">0xff0000
+    </span>};
 
     <span class="comment">// Construct the embed title
     </span><span class="kw">let </span>title = <span class="macro">format!</span>(
-        <span class="string">"**{}** - **Game Result : {} {} - {} **"</span>,
-        player_name, game_result, game_result_emoji, game_duration
+        <span class="string">"**{}** - **{}: {} {} - {} **"</span>,
+        player_name, game_mode, game_result, game_result_emoji, game_duration
     );
 
     <span class="kw">let </span>roles_order = [<span class="string">"TOP"</span>, <span class="string">"JUNGLE"</span>, <span class="string">"MIDDLE"</span>, <span class="string">"BOTTOM"</span>, <span class="string">"UTILITY"</span>];
@@ -418,27 +511,63 @@
     }
     <span class="kw">let </span><span class="kw-2">mut </span>embed = CreateEmbed::new()
         .title(title)
-        .color(color);
+        .color(color)
+        .thumbnail(game_result_thumbnail);
 
     <span class="kw">for </span>role <span class="kw">in </span><span class="kw-2">&amp;</span>roles_order {
         <span class="kw">if let </span><span class="prelude-val">Some</span>(matchup) = matchups_by_role.get(<span class="kw-2">&amp;</span>role.to_uppercase()) {
             <span class="kw">let </span>team_player = <span class="kw-2">&amp;</span>matchup[<span class="string">"team"</span>];
             <span class="kw">let </span>enemy_player = <span class="kw-2">&amp;</span>matchup[<span class="string">"enemy"</span>];
             <span class="kw">let </span>role_label = <span class="kw">match </span><span class="kw-2">*</span>role {
-                <span class="string">"TOP" </span>=&gt; <span class="string">"**🔼 TOP**\n"</span>,
-                <span class="string">"JUNGLE" </span>=&gt; <span class="string">"**🌲 JUNGLE**\n"</span>,
-                <span class="string">"MIDDLE" </span>=&gt; <span class="string">"**🛣️ MIDDLE**\n"</span>,
-                <span class="string">"BOTTOM" </span>=&gt; <span class="string">"**🔽 BOTTOM**\n"</span>,
-                <span class="string">"UTILITY" </span>=&gt; <span class="string">"**🛡️ SUPPORT**\n"</span>,
-                <span class="kw">_ </span>=&gt; <span class="string">"**UNKNOWN**\n"</span>,
+                <span class="string">"TOP" </span>=&gt; <span class="macro">format!</span>(
+                    <span class="string">"**{} TOP**\n"</span>,
+                    get_emoji(collection_emoji.clone(), <span class="string">"position"</span>, <span class="string">"TOP"</span>)
+                        .<span class="kw">await
+                        </span>.unwrap_or(<span class="string">"🔼"</span>.to_string())
+                ),
+                <span class="string">"JUNGLE" </span>=&gt; <span class="macro">format!</span>(
+                    <span class="string">"**{} JUNGLE**\n"</span>,
+                    get_emoji(collection_emoji.clone(), <span class="string">"position"</span>, <span class="string">"JUNGLE"</span>)
+                        .<span class="kw">await
+                        </span>.unwrap_or(<span class="string">"🌲"</span>.to_string())
+                ),
+                <span class="string">"MIDDLE" </span>=&gt; <span class="macro">format!</span>(
+                    <span class="string">"**{} MIDDLE**\n"</span>,
+                    get_emoji(collection_emoji.clone(), <span class="string">"position"</span>, <span class="string">"MIDDLE"</span>)
+                        .<span class="kw">await
+                        </span>.unwrap_or(<span class="string">"🛣️"</span>.to_string())
+                ),
+                <span class="string">"BOTTOM" </span>=&gt; <span class="macro">format!</span>(
+                    <span class="string">"**{} BOTTOM**\n"</span>,
+                    get_emoji(collection_emoji.clone(), <span class="string">"position"</span>, <span class="string">"BOTTOM"</span>)
+                        .<span class="kw">await
+                        </span>.unwrap_or(<span class="string">"🔽"</span>.to_string())
+                ),
+                <span class="string">"UTILITY" </span>=&gt; <span class="macro">format!</span>(
+                    <span class="string">"**{} SUPPORT**\n"</span>,
+                    get_emoji(collection_emoji.clone(), <span class="string">"position"</span>, <span class="string">"SUPPORT"</span>)
+                        .<span class="kw">await
+                        </span>.unwrap_or(<span class="string">"🛡️"</span>.to_string())
+                ),
+                <span class="kw">_ </span>=&gt; <span class="string">"**UNKNOWN**\n"</span>.to_string(),
             };
 
             <span class="comment">// Team player stats
             </span><span class="kw">let </span>team_stats = <span class="macro">format!</span>(
-
-                <span class="string">"**{}** ({})\nK/D/A: **{}/{}/{}** | CS: **{}** | Gold: {} | Vision: {}"</span>,
+                <span class="string">"{} **{}**\nK/D/A: **{}/{}/{}** | CS: **{}** | Gold: {} | Vision: {}"</span>,
+                get_emoji(
+                    collection_emoji.clone(),
+                    <span class="string">"champions"</span>,
+                    team_player[<span class="string">"championName"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>)
+                )
+                .<span class="kw">await
+                </span>.unwrap_or(
+                    team_player[<span class="string">"championName"</span>]
+                        .as_str()
+                        .unwrap_or(<span class="string">"Unknown"</span>)
+                        .to_string()
+                ),
                 team_player[<span class="string">"summonerName"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>),
-                team_player[<span class="string">"championName"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>),
                 team_player[<span class="string">"kills"</span>].as_u64().unwrap_or(<span class="number">0</span>),
                 team_player[<span class="string">"deaths"</span>].as_u64().unwrap_or(<span class="number">0</span>),
                 team_player[<span class="string">"assists"</span>].as_u64().unwrap_or(<span class="number">0</span>),
@@ -449,9 +578,20 @@
 
             <span class="comment">// Enemy player stats
             </span><span class="kw">let </span>enemy_stats = <span class="macro">format!</span>(
-                <span class="string">"**{}** ({})\nK/D/A: **{}/{}/{}** | CS: **{}** | Gold: {} | Vision: {}"</span>,
+                <span class="string">"{} **{}**\nK/D/A: **{}/{}/{}** | CS: **{}** | Gold: {} | Vision: {}"</span>,
+                get_emoji(
+                    collection_emoji.clone(),
+                    <span class="string">"champions"</span>,
+                    enemy_player[<span class="string">"championName"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>)
+                )
+                .<span class="kw">await
+                </span>.unwrap_or(
+                    enemy_player[<span class="string">"championName"</span>]
+                        .as_str()
+                        .unwrap_or(<span class="string">"Unknown"</span>)
+                        .to_string()
+                ),
                 enemy_player[<span class="string">"summonerName"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>),
-                enemy_player[<span class="string">"championName"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>),
                 enemy_player[<span class="string">"kills"</span>].as_u64().unwrap_or(<span class="number">0</span>),
                 enemy_player[<span class="string">"deaths"</span>].as_u64().unwrap_or(<span class="number">0</span>),
                 enemy_player[<span class="string">"assists"</span>].as_u64().unwrap_or(<span class="number">0</span>),
@@ -464,11 +604,7 @@
             </span><span class="kw">let </span>field_value = <span class="macro">format!</span>(<span class="string">"{}\n{}"</span>, team_stats, enemy_stats);
 
             <span class="comment">// Add the field to the embed
-            </span>embed = embed.field(
-                role_label,
-                field_value,
-                <span class="bool-val">false
-            </span>);
+            </span>embed = embed.field(role_label, field_value, <span class="bool-val">false</span>);
         }
     }
 
@@ -477,14 +613,14 @@
 
 <span class="doccomment">/// ⚙️ **Function**: Extracts key participant statistics from a match for a given player.
 ///
-/// This function retrieves important statistics for a participant in a League of Legends match, such as their summoner name, 
+/// This function retrieves important statistics for a participant in a League of Legends match, such as their summoner name,
 /// champion name, kills, deaths, assists, total farm, gold earned, and vision score. The extracted stats are returned as a JSON object (`serde_json::Value`).
 ///
 /// # Parameters:
 /// - `p`: A reference to a `serde_json::Value` object representing a participant in the match. This object contains all of the participant's stats and data.
 ///
 /// # Returns:
-/// - `Value`: Returns a JSON object containing the player's stats, including their summoner name, champion name, K/D/A (kills, deaths, assists), 
+/// - `Value`: Returns a JSON object containing the player's stats, including their summoner name, champion name, K/D/A (kills, deaths, assists),
 /// total farm (minions and neutral monsters killed), gold earned, gold per minute, and vision score.
 ///
 /// # Example:
@@ -501,7 +637,11 @@
 /// - The stats returned include the summoner's name, champion, K/D/A, farm, gold, gold per minute, and vision score, which are useful for comparing performance across teams.
 </span><span class="kw">fn </span>extract_participant_stats(p: <span class="kw-2">&amp;</span>Value) -&gt; Value {
     <span class="kw">let </span>riot_id_game_name = p[<span class="string">"riotIdGameName"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>);
-    <span class="kw">let </span>summoner_name = <span class="kw">if </span>p[<span class="string">"summonerName"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>).is_empty() { riot_id_game_name } <span class="kw">else </span>{ p[<span class="string">"summonerName"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>) };
+    <span class="kw">let </span>summoner_name = <span class="kw">if </span>p[<span class="string">"summonerName"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>).is_empty() {
+        riot_id_game_name
+    } <span class="kw">else </span>{
+        p[<span class="string">"summonerName"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>)
+    };
     <span class="kw">let </span>champion_name = p[<span class="string">"championName"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>);
     <span class="kw">let </span>kills = p[<span class="string">"kills"</span>].as_u64().unwrap_or(<span class="number">0</span>);
     <span class="kw">let </span>deaths = p[<span class="string">"deaths"</span>].as_u64().unwrap_or(<span class="number">0</span>);
@@ -526,14 +666,14 @@
 
 <span class="doccomment">/// ⚙️ **Function**: Formats the amount of gold earned in a match into a more readable "k" notation when appropriate.
 ///
-/// This function takes an amount of gold as input and formats it into a human-readable string. If the amount is less than 1000, 
+/// This function takes an amount of gold as input and formats it into a human-readable string. If the amount is less than 1000,
 /// it returns the gold value as a simple string. If the gold is 1000 or more, it formats the value in "k" notation (e.g., 1500 becomes "1.5k").
 ///
 /// # Parameters:
 /// - `gold`: A `u64` value representing the amount of gold earned by a player in a match.
 ///
 /// # Returns:
-/// - `String`: A formatted string representing the gold amount. If the amount is less than 1000, it returns the value as is. 
+/// - `String`: A formatted string representing the gold amount. If the amount is less than 1000, it returns the value as is.
 /// For amounts equal to or greater than 1000, it returns a string in "k" notation (e.g., "1k", "1.5k") with a comma used as the decimal separator.
 ///
 /// # Example:
@@ -549,7 +689,7 @@
     <span class="kw">if </span>gold &lt; <span class="number">1000 </span>{
         gold.to_string()
     } <span class="kw">else </span>{
-        <span class="kw">let </span>gold_f64 = gold <span class="kw">as </span>f64 / <span class="number">1000.0</span>;
+        <span class="kw">let </span>gold_f64 = (gold <span class="kw">as </span>f64) / <span class="number">1000.0</span>;
         <span class="kw">if </span>gold_f64.fract() == <span class="number">0.0 </span>{
             <span class="macro">format!</span>(<span class="string">"{}k"</span>, gold_f64 <span class="kw">as </span>u64)
         } <span class="kw">else </span>{
