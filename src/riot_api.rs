@@ -303,7 +303,7 @@ pub async fn open_dd_json() -> Result<Value, Error> {
         .await?
         .json()
         .await?;
-    let version = version_json[0].to_string();
+    let version = version_json[0].as_str().unwrap();
     let dd_json = reqwest::get(format!(
         "https://ddragon.leagueoflegends.com/cdn/{}/data/fr_FR/champion.json",
         version

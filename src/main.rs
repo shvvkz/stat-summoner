@@ -101,7 +101,6 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
     let http = client.http.clone();
     tokio::spawn(async move {
         loop {
-            // Exécuter la vérification périodique de la base de données
             match check_and_update_db(&mongo_client_clone, &riot_api_key_clone, http.clone()).await
             {
                 Ok(_) => (),

@@ -48,10 +48,7 @@ pub async fn check_and_update_db(
     let count = collection.estimated_document_count().await?;
 
     if count > 0 {
-        println!("La base de données contient {} documents.", count);
-
         let followed_summoners = get_followed_summoners(&collection).await?;
-
         for followed_summoner in followed_summoners {
             process_followed_summoner(
                 &collection,
