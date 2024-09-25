@@ -299,11 +299,19 @@ pub async fn get_champions(
 /// }
 /// ```
 pub async fn open_dd_json() -> Result<Value, Error> {
-    let dd_json =
-        reqwest::get("https://ddragon.leagueoflegends.com/cdn/14.18.1/data/fr_FR/champion.json")
-            .await?
-            .json()
-            .await?;
+    let version_json: Value = reqwest::get("https://ddragon.leagueoflegends.com/api/versions.json")
+        .await?
+        .json()
+        .await?;
+    let version = version_json[0].to_string();
+    let dd_json = reqwest::get(format!(
+        "https://ddragon.leagueoflegends.com/cdn/{}/data/fr_FR/champion.json",
+        version
+    ))
+    .await?
+    .json()
+    .await?;
+    println!("Data dragon version: {}", version);
     Ok(dd_json)
 }
 

@@ -7,7 +7,6 @@ use crate::module::lolstats::utils::create_and_send_embed_lolstats;
 use crate::riot_api::{get_champions, get_matchs_id, get_puuid, get_rank_info, get_summoner_id};
 use crate::utils::{determine_solo_flex, region_to_string};
 use futures::join;
-use mongodb::Collection;
 use poise::Modal;
 use reqwest::Client;
 use std::collections::HashMap;
