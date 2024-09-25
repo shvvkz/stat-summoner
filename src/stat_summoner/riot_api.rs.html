@@ -367,6 +367,14 @@
 <a href="#367" id="367">367</a>
 <a href="#368" id="368">368</a>
 <a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
 <span class="kw">use </span>reqwest::Client;
 <span class="kw">use </span>serde_json::Value;
@@ -668,11 +676,19 @@
 /// }
 /// ```
 </span><span class="kw">pub async fn </span>open_dd_json() -&gt; <span class="prelude-ty">Result</span>&lt;Value, Error&gt; {
-    <span class="kw">let </span>dd_json =
-        reqwest::get(<span class="string">"https://ddragon.leagueoflegends.com/cdn/14.18.1/data/fr_FR/champion.json"</span>)
-            .<span class="kw">await</span><span class="question-mark">?
-            </span>.json()
-            .<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span>version_json: Value = reqwest::get(<span class="string">"https://ddragon.leagueoflegends.com/api/versions.json"</span>)
+        .<span class="kw">await</span><span class="question-mark">?
+        </span>.json()
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span>version = version_json[<span class="number">0</span>].to_string();
+    <span class="kw">let </span>dd_json = reqwest::get(<span class="macro">format!</span>(
+        <span class="string">"https://ddragon.leagueoflegends.com/cdn/{}/data/fr_FR/champion.json"</span>,
+        version
+    ))
+    .<span class="kw">await</span><span class="question-mark">?
+    </span>.json()
+    .<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="macro">println!</span>(<span class="string">"Data dragon version: {}"</span>, version);
     <span class="prelude-val">Ok</span>(dd_json)
 }
 
