@@ -680,7 +680,7 @@
         .<span class="kw">await</span><span class="question-mark">?
         </span>.json()
         .<span class="kw">await</span><span class="question-mark">?</span>;
-    <span class="kw">let </span>version = version_json[<span class="number">0</span>].to_string();
+    <span class="kw">let </span>version = version_json[<span class="number">0</span>].as_str().unwrap();
     <span class="kw">let </span>dd_json = reqwest::get(<span class="macro">format!</span>(
         <span class="string">"https://ddragon.leagueoflegends.com/cdn/{}/data/fr_FR/champion.json"</span>,
         version
