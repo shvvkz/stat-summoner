@@ -26,3 +26,35 @@ pub struct EmojiId {
     pub name: String,
     pub id_emoji: String,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChampionData {
+    pub name: String,
+    pub id_name: String,
+    pub role: Vec<String>,
+    pub popularity: String,
+    pub winrate: String,
+    pub banrate: String,
+    pub runes: RunesData,
+    pub core_build: CoreBuildData,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RunesData {
+    pub parent_primary_rune: String,
+    pub child_primary_rune_1: String,
+    pub child_primary_rune_2: String,
+    pub child_primary_rune_3: String,
+    pub child_secondary_rune_1: String,
+    pub child_secondary_rune_2: String,
+    pub tertiary_rune_1: String,
+    pub tertiary_rune_2: String,
+    pub tertiary_rune_3: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CoreBuildData {
+    pub first: String,
+    pub second: String,
+    pub third: String,
+}
