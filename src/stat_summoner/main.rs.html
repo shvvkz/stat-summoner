@@ -114,6 +114,18 @@
 <a href="#114" id="114">114</a>
 <a href="#115" id="115">115</a>
 <a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
 </pre></div><pre class="rust"><code><span class="kw">mod </span>embed;
 <span class="kw">mod </span>models;
 <span class="kw">mod </span>module;
@@ -121,9 +133,10 @@
 <span class="kw">mod </span>utils;
 
 <span class="kw">use </span>models::data::Data;
+<span class="kw">use </span>module::championsinfos::championsinfos::championsinfos;
 <span class="kw">use </span>module::followgames::followgames::followgames;
 <span class="kw">use </span>module::lolstats::lolstats::lolstats;
-<span class="kw">use </span>module::loop_module::loop_module::check_and_update_db;
+<span class="kw">use </span>module::loop_module::loop_module::{check_and_update_db, fetch_champion_data};
 <span class="kw">use </span>module::whoisfollowed::whoisfollowed::whoisfollowed;
 <span class="kw">use </span>mongodb::bson::doc;
 <span class="kw">use </span>mongodb::{
@@ -187,12 +200,14 @@
     <span class="kw">let </span>mongo_client =
         Client::with_options(client_options).expect(<span class="string">"Failed to create MongoDB client"</span>);
     <span class="kw">let </span>mongo_client_clone = mongo_client.clone();
+    <span class="kw">let </span>mongo_client_clone_2 = mongo_client.clone();
     <span class="kw">let </span>riot_api_key_clone = riot_api_key.clone();
     <span class="kw">let </span>dd_json = riot_api::open_dd_json().<span class="kw">await</span>.unwrap();
+
     <span class="comment">// Configurer le framework Poise avec les commandes
     </span><span class="kw">let </span>framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: <span class="macro">vec!</span>[lolstats(), followgames(), whoisfollowed()],
+            commands: <span class="macro">vec!</span>[lolstats(), followgames(), whoisfollowed(), championsinfos()],
             ..Default::default()
         })
         .setup(<span class="kw">move </span>|_ctx, _ready, _framework| {
@@ -226,6 +241,15 @@
                 ),
             }
             sleep(Duration::from_secs(<span class="number">120</span>)).<span class="kw">await</span>; <span class="comment">// Attendre 2 minutes
+        </span>}
+    });
+    tokio::spawn(<span class="kw">async move </span>{
+        <span class="kw">loop </span>{
+            <span class="kw">match </span>fetch_champion_data(<span class="kw-2">&amp;</span>mongo_client_clone_2).<span class="kw">await </span>{
+                <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="macro">println!</span>(<span class="string">"Champion data updated successfully."</span>),
+                <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">error!</span>(<span class="string">"Error updating champion data: {:?}"</span>, e),
+            }
+            sleep(Duration::from_secs(<span class="number">60 </span>* <span class="number">60 </span>* <span class="number">24</span>)).<span class="kw">await</span>; <span class="comment">// Attendre 24 heures
         </span>}
     });
     <span class="prelude-val">Ok</span>(client.into())

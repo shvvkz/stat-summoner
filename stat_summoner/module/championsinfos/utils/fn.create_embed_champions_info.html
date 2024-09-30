@@ -1,0 +1,65 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="⚙️ Constructs a Discord embed containing detailed information about a League of Legends champion."><title>create_embed_champions_info in stat_summoner::module::championsinfos::utils - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stat_summoner" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../../stat_summoner/index.html">stat_summoner</a><span class="version">0.4.0</span></h2></div><div class="sidebar-elems"><h2><a href="index.html">In stat_summoner::module::championsinfos::utils</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Function <a href="../../../index.html">stat_summoner</a>::<wbr><a href="../../index.html">module</a>::<wbr><a href="../index.html">championsinfos</a>::<wbr><a href="index.html">utils</a>::<wbr><a class="fn" href="#">create_embed_champions_info</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../../../src/stat_summoner/module/championsinfos/utils.rs.html#68-197">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><pre class="rust item-decl"><code>pub async fn create_embed_champions_info(
+    champion_data: <a class="struct" href="../../../models/data/struct.ChampionData.html" title="struct stat_summoner::models::data::ChampionData">ChampionData</a>,
+    collection_emoji: &amp;<a class="struct" href="https://docs.rs/mongodb/3.1.0/mongodb/coll/struct.Collection.html" title="struct mongodb::coll::Collection">Collection</a>&lt;<a class="struct" href="../../../models/data/struct.EmojiId.html" title="struct stat_summoner::models::data::EmojiId">EmojiId</a>&gt;,
+) -&gt; <a class="enum" href="https://doc.rust-lang.org/1.81.0/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="struct" href="https://docs.rs/serenity/*/serenity/builder/create_embed/struct.CreateEmbed.html" title="struct serenity::builder::create_embed::CreateEmbed">CreateEmbed</a>, <a class="struct" href="https://doc.rust-lang.org/1.81.0/alloc/boxed/struct.Box.html" title="struct alloc::boxed::Box">Box</a>&lt;dyn <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/error/trait.Error.html" title="trait core::error::Error">Error</a> + <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + <a class="trait" href="https://doc.rust-lang.org/1.81.0/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a>&gt;&gt;</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>⚙️ Constructs a Discord embed containing detailed information about a League of Legends champion.</p>
+<p>This function takes the champion’s data and a collection of emojis to create a richly formatted Discord embed.
+It includes the champion’s roles, winrate, banrate, popularity, recommended runes (with emojis), and core item build (with emojis).
+The embed is designed to provide users with an at-a-glance overview of the champion’s statistics and recommended setups.</p>
+<h2 id="parameters"><a class="doc-anchor" href="#parameters">§</a>Parameters:</h2>
+<ul>
+<li><code>champion_data</code>: A <code>ChampionData</code> struct containing the champion’s information, including roles, runes, items, and statistics.</li>
+<li><code>collection_emoji</code>: A reference to a MongoDB <code>Collection&lt;EmojiId&gt;</code> used to retrieve the appropriate emojis for runes and items.</li>
+</ul>
+<h2 id="returns"><a class="doc-anchor" href="#returns">§</a>Returns:</h2>
+<ul>
+<li><code>Result&lt;CreateEmbed, Error&gt;</code>: On success, returns a <code>CreateEmbed</code> object representing the Discord embed.
+On failure, returns an <code>Error</code> detailing what went wrong.</li>
+</ul>
+<h2 id="-notes"><a class="doc-anchor" href="#-notes">§</a>⚠️ Notes:</h2>
+<ul>
+<li>The function retrieves emojis asynchronously for each rune and item using the <code>get_emoji</code> function.</li>
+<li>It formats numerical statistics (winrate, banrate, popularity) as percentages.</li>
+<li>The embed includes a thumbnail image of the champion, fetched from the Data Dragon API.</li>
+<li>The embed includes a footer indicating that the message will be deleted after 60 seconds.</li>
+</ul>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example:</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>champion_data = <span class="comment">/* Fetch or construct ChampionData */</span>;
+<span class="kw">let </span>embed = create_embed_champions_info(champion_data, <span class="kw-2">&amp;</span>collection_emoji).<span class="kw">await</span><span class="question-mark">?</span>;
+ctx.send(|m| m.set_embed(embed)).<span class="kw">await</span><span class="question-mark">?</span>;</code></pre></div>
+<p>This function produces an embed displaying information such as:</p>
+<div class="example-wrap"><pre class="language-text"><code>📝 Informations sur Jhin
+Rôles: AD Carry
+Winrate: 51.74%   Banrate: 17.61%   Popularité: 27.57%
+
+Runes:
+**Rune principale :** &lt;FleetFootwork Emoji&gt;
+&lt;PresenceOfMind Emoji&gt; &lt;LegendBloodline Emoji&gt; &lt;CoupDeGrace Emoji&gt;
+
+**Runes secondaires:**
+&lt;Celerity Emoji&gt; &lt;GatheringStorm Emoji&gt;
+
+**Fragments:** &lt;AdaptiveForce Emoji&gt; &lt;AdaptiveForce Emoji&gt; &lt;HealthScale Emoji&gt;
+
+Build d&#39;objets:
+&lt;StatikkShiv Emoji&gt; &lt;RapidFirecannon Emoji&gt; &lt;InfinityEdge Emoji&gt;
+</code></pre></div><h2 id="errors"><a class="doc-anchor" href="#errors">§</a>Errors:</h2>
+<ul>
+<li>If any of the asynchronous calls to <code>get_emoji</code> fail, the function returns an <code>Error</code>.</li>
+<li>If there is an issue parsing the numerical statistics from the <code>champion_data</code>.</li>
+</ul>
+<h2 id="see-also"><a class="doc-anchor" href="#see-also">§</a>See Also:</h2>
+<ul>
+<li><code>get_emoji</code>: Retrieves the emoji string corresponding to a given rune or item name.</li>
+<li><code>championsinfos</code>: The command that invokes this function to display the champion’s information.</li>
+</ul>
+<h2 id="related-structures"><a class="doc-anchor" href="#related-structures">§</a>Related Structures:</h2>
+<ul>
+<li><code>ChampionData</code>: Contains the champion’s details used to construct the embed.</li>
+<li><code>EmojiId</code>: Represents the mapping of rune or item names to their corresponding emoji IDs.</li>
+</ul>
+<h2 id="dependencies"><a class="doc-anchor" href="#dependencies">§</a>Dependencies:</h2>
+<ul>
+<li>This function relies on external data sources such as the Data Dragon API for champion images.</li>
+<li>It also depends on the MongoDB collection for retrieving emojis.</li>
+</ul>
+</div></details></section></div></main></body></html>

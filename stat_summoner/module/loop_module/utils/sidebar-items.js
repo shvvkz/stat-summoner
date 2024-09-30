@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["create_embed_loop","extract_participant_stats","format_gold_k","get_match_details"]};
+window.SIDEBAR_ITEMS = {"fn":["clean_alt_text","create_embed_loop","delete_follower","extract_core_build","extract_participant_stats","extract_runes","fetch_core_build","fetch_runes","format_gold_k","get_followed_summoners","get_latest_match_id","get_match_details","is_follow_time_expired","process_followed_summoner","send_match_update_to_discord","update_follower_if_new_match"]};
