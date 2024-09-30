@@ -5,9 +5,10 @@ mod riot_api;
 mod utils;
 
 use models::data::Data;
+use module::championsinfos::championsinfos::championsinfos;
 use module::followgames::followgames::followgames;
 use module::lolstats::lolstats::lolstats;
-use module::loop_module::loop_module::check_and_update_db;
+use module::loop_module::loop_module::{check_and_update_db, fetch_champion_data};
 use module::whoisfollowed::whoisfollowed::whoisfollowed;
 use mongodb::bson::doc;
 use mongodb::{
@@ -71,12 +72,14 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
     let mongo_client =
         Client::with_options(client_options).expect("Failed to create MongoDB client");
     let mongo_client_clone = mongo_client.clone();
+    let mongo_client_clone_2 = mongo_client.clone();
     let riot_api_key_clone = riot_api_key.clone();
     let dd_json = riot_api::open_dd_json().await.unwrap();
+
     // Configurer le framework Poise avec les commandes
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![lolstats(), followgames(), whoisfollowed()],
+            commands: vec![lolstats(), followgames(), whoisfollowed(), championsinfos()],
             ..Default::default()
         })
         .setup(move |_ctx, _ready, _framework| {
@@ -110,6 +113,15 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                 ),
             }
             sleep(Duration::from_secs(120)).await; // Attendre 2 minutes
+        }
+    });
+    tokio::spawn(async move {
+        loop {
+            match fetch_champion_data(&mongo_client_clone_2).await {
+                Ok(_) => println!("Champion data updated successfully."),
+                Err(e) => error!("Error updating champion data: {:?}", e),
+            }
+            sleep(Duration::from_secs(60 * 60 * 24)).await; // Attendre 24 heures
         }
     });
     Ok(client.into())

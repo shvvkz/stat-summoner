@@ -27,3 +27,11 @@ pub struct FollowGamesModal {
     #[placeholder = "Enter the number of hours (e.g., 2)"]
     pub time_followed: String,
 }
+
+#[derive(Debug, Modal)]
+#[name = "Enter the summoner info"]
+pub struct ChampionsInfosModal {
+    #[name = "Champion Name"]
+    #[placeholder = "Enter the champion name (e.g., Jinx)"]
+    pub champion_name: String,
+}
