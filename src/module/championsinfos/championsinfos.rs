@@ -1,11 +1,11 @@
-use mongodb::bson::doc;
-use poise::{CreateReply, Modal};
 use crate::embed::{create_embed_error, schedule_message_deletion};
 use crate::models::data::{ChampionData, Data, EmojiId};
 use crate::models::error::Error;
 use crate::models::modal::ChampionsInfosModal;
 use crate::module::championsinfos::utils::create_embed_champions_info;
 use crate::utils::{get_champion_id, get_champion_names};
+use mongodb::bson::doc;
+use poise::{CreateReply, Modal};
 use strsim::normalized_levenshtein;
 
 /// Fetches and displays detailed information about a League of Legends champion based on user input.
@@ -64,9 +64,7 @@ use strsim::normalized_levenshtein;
 /// # Related Commands:
 /// - `lolstats`: Fetches and displays LoL player stats based on user input.
 #[poise::command(slash_command)]
-pub async fn championsinfos(
-    ctx: poise::ApplicationContext<'_, Data, Error>,
-) -> Result<(), Error> {
+pub async fn championsinfos(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(), Error> {
     let modal_data: ChampionsInfosModal = match ChampionsInfosModal::execute(ctx).await {
         Ok(Some(data)) => data,
         Ok(None) => {
@@ -117,7 +115,10 @@ pub async fn championsinfos(
     match collection_champions.find_one(filter).await {
         Ok(Some(champion_data)) => {
             let embed = create_embed_champions_info(champion_data, &collection_emoji).await?;
-            let reply = CreateReply {embeds: vec![embed], ..Default::default()};
+            let reply = CreateReply {
+                embeds: vec![embed],
+                ..Default::default()
+            };
             let sent_message = ctx.send(reply).await?;
             if let Err(e) = schedule_message_deletion(sent_message, ctx).await {
                 eprintln!("Failed to schedule message deletion: {}", e);
@@ -130,7 +131,5 @@ pub async fn championsinfos(
         }
     }
 
-
     Ok(())
 }
-

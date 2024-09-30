@@ -308,7 +308,6 @@ pub fn get_game_mode(queue_id: i64) -> &'static str {
     "Unknown"
 }
 
-
 pub fn get_champion_names(dd_json: &Value) -> Vec<String> {
     // Obtenir le champ "data" qui contient les champions
     let data = &dd_json["data"];
@@ -316,7 +315,8 @@ pub fn get_champion_names(dd_json: &Value) -> Vec<String> {
     // Vérifier que "data" est un objet
     if let Some(champion_map) = data.as_object() {
         // Itérer sur les valeurs (données des champions)
-        champion_map.values()
+        champion_map
+            .values()
             .filter_map(|champion| champion["name"].as_str().map(|s| s.to_string()))
             .collect()
     } else {

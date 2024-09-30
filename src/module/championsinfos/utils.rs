@@ -1,9 +1,8 @@
-
-use poise::serenity_prelude::{CreateEmbed, CreateEmbedFooter};
-use mongodb::Collection;
 use crate::models::data::{ChampionData, EmojiId};
 use crate::models::error::Error;
 use crate::utils::get_emoji;
+use mongodb::Collection;
+use poise::serenity_prelude::{CreateEmbed, CreateEmbedFooter};
 
 /// ⚙️ Constructs a Discord embed containing detailed information about a League of Legends champion.
 ///
@@ -70,7 +69,6 @@ pub async fn create_embed_champions_info(
     champion_data: ChampionData,
     collection_emoji: &Collection<EmojiId>,
 ) -> Result<CreateEmbed, Error> {
-
     let primary_rune_emoji = get_emoji(
         collection_emoji.clone(),
         "rune",
@@ -157,18 +155,9 @@ pub async fn create_embed_champions_info(
     )
     .await?;
 
-    let popularity = champion_data
-        .popularity
-        .parse::<f64>()
-        .unwrap_or(0.0) * 100.0;
-    let winrate = champion_data
-        .winrate
-        .parse::<f64>()
-        .unwrap_or(0.0) * 100.0;
-    let banrate = champion_data
-        .banrate
-        .parse::<f64>()
-        .unwrap_or(0.0) * 100.0;
+    let popularity = champion_data.popularity.parse::<f64>().unwrap_or(0.0) * 100.0;
+    let winrate = champion_data.winrate.parse::<f64>().unwrap_or(0.0) * 100.0;
+    let banrate = champion_data.banrate.parse::<f64>().unwrap_or(0.0) * 100.0;
 
     let runes_description = format!(
         "**Rune principale :** {}\n{} {} {}\n\n**Runes secondaires :** \n{} {}\n\n**Fragments :** {} {} {}",
