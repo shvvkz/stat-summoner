@@ -5,6 +5,7 @@ mod riot_api;
 mod utils;
 
 use models::data::Data;
+use module::championsinfos::championsinfos::championsinfos;
 use module::followgames::followgames::followgames;
 use module::lolstats::lolstats::lolstats;
 use module::loop_module::loop_module::{check_and_update_db, fetch_champion_data};
@@ -78,7 +79,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
     // Configurer le framework Poise avec les commandes
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![lolstats(), followgames(), whoisfollowed()],
+            commands: vec![lolstats(), followgames(), whoisfollowed(), championsinfos()],
             ..Default::default()
         })
         .setup(move |_ctx, _ready, _framework| {

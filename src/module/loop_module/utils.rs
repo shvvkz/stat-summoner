@@ -895,33 +895,33 @@ fn extract_core_build(icons_row: select::node::Node) -> CoreBuildData {
 ///
 /// This function processes the `alt` attribute text extracted from HTML elements, removes unwanted characters,
 /// and applies special rules. If the `alt` text contains certain characters (parentheses, hyphens, and plus signs),
-/// it returns "Health Scale". Otherwise, it cleans the text by removing parentheses, numbers, and specific symbols.
+/// it returns "HealthScale". Otherwise, it cleans the text by removing parentheses, numbers, and specific symbols.
 ///
 /// # Parameters:
 /// - `alt`: A string slice representing the `alt` text from an HTML `img` tag that needs to be cleaned.
 ///
 /// # Returns:
 /// - `String`: Returns a cleaned version of the `alt` text. If the `alt` text matches specific patterns (parentheses, hyphen, and plus signs),
-/// it returns "Health Scale". Otherwise, it returns the cleaned text with unwanted characters removed.
+/// it returns "HealthScale". Otherwise, it returns the cleaned text with unwanted characters removed.
 ///
 /// # Example:
 /// This function is typically called to clean the text from the `alt` attributes of item or rune images:
 ///
 /// ```rust
 /// let clean_text = clean_alt_text("Health (100) + 10% - 5%");
-/// println!("{}", clean_text); // Output: "Health Scale"
+/// println!("{}", clean_text); // Output: "HealthScale"
 ///
 /// let clean_text = clean_alt_text("Sunfire Aegis");
 /// println!("{}", clean_text); // Output: "SunfireAegis"
 /// ```
 ///
 /// # Notes:
-/// - If the `alt` text contains parentheses `()`, a hyphen `-`, and a plus sign `+`, the function returns "Health Scale".
+/// - If the `alt` text contains parentheses `()`, a hyphen `-`, and a plus sign `+`, the function returns "HealthScale".
 /// - It uses regular expressions to remove unwanted characters such as parentheses, numbers, percentage symbols, commas, and others.
 /// - Spaces are also removed in the final output.
 fn clean_alt_text(alt: &str) -> String {
     if alt.contains('(') && alt.contains(')') && alt.contains('-') && alt.contains('+') {
-        return "Health Scale".to_string();
+        return "HealthScale".to_string();
     }
     let re_parentheses = Regex::new(r"\(.*?\)").unwrap();
     let cleaned_alt = re_parentheses.replace_all(alt, "");

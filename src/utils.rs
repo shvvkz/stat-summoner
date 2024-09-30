@@ -5,6 +5,7 @@ use chrono::{NaiveDateTime, Utc};
 use mongodb::bson::doc;
 use mongodb::Collection;
 use serde::de::value::Error;
+use serde_json::Value;
 use std::collections::HashMap;
 
 /// ⚙️ **Function**: Checks if a given queue ID corresponds to a valid game mode.
@@ -305,4 +306,38 @@ pub fn get_game_mode(queue_id: i64) -> &'static str {
         }
     }
     "Unknown"
+}
+
+
+pub fn get_champion_names(dd_json: &Value) -> Vec<String> {
+    // Obtenir le champ "data" qui contient les champions
+    let data = &dd_json["data"];
+
+    // Vérifier que "data" est un objet
+    if let Some(champion_map) = data.as_object() {
+        // Itérer sur les valeurs (données des champions)
+        champion_map.values()
+            .filter_map(|champion| champion["name"].as_str().map(|s| s.to_string()))
+            .collect()
+    } else {
+        vec![]
+    }
+}
+
+pub fn get_champion_id(dd_json: &Value, name: &str) -> Option<String> {
+    let data = &dd_json["data"];
+    if let Some(champion_map) = data.as_object() {
+        for (_, champion_value) in champion_map {
+            // Obtenir le nom du champion
+            if let Some(champion_name) = champion_value["name"].as_str() {
+                if champion_name.eq_ignore_ascii_case(name) {
+                    if let Some(champion_id) = champion_value["id"].as_str() {
+                        return Some(champion_id.to_string());
+                    }
+                }
+            }
+        }
+    }
+    // Si aucun champion correspondant n'est trouvé, retourner None
+    None
 }
