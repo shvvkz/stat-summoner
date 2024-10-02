@@ -160,7 +160,7 @@ pub async fn create_embed_champions_info(
     let banrate = champion_data.banrate.parse::<f64>().unwrap_or(0.0) * 100.0;
 
     let runes_description = format!(
-        "**Rune principale :** {}\n{} {} {}\n\n**Runes secondaires :** \n{} {}\n\n**Fragments :** {} {} {}",
+        "**Primary Rune:** {}\n{} {} {}\n\n**Secondary Runes:** \n{} {}\n\n**Shards:** {} {} {}",
         primary_rune_emoji,
         child_primary_rune_1_emoji,
         child_primary_rune_2_emoji,
@@ -177,19 +177,19 @@ pub async fn create_embed_champions_info(
         core_item_1_emoji, core_item_2_emoji, core_item_3_emoji
     );
     let embed = CreateEmbed::default()
-        .title(format!("Informations sur {}", champion_data.name))
+        .title(format!("Informations about {}", champion_data.name))
         .color(0x00ff00)
-        .field("Rôles", champion_data.role.join(", "), false)
+        .field("Role", champion_data.role.join(", "), false)
         .field("Winrate", format!("{:.2}%", winrate), true)
         .field("Banrate", format!("{:.2}%", banrate), true)
-        .field("Popularité", format!("{:.2}%", popularity), true)
+        .field("Popularity", format!("{:.2}%", popularity), true)
         .field("Runes", runes_description, false)
-        .field("Build d'objets", core_build_description, false)
+        .field("Build", core_build_description, false)
         .footer(CreateEmbedFooter::new(
-            "Ce message sera supprimé dans 60 secondes.",
+            "This message will be deleted in 60 seconds.",
         ))
         .thumbnail(format!(
-            "https://ddragon.leagueoflegends.com/cdn/14.14.1/img/champion/{}.png",
+            "https://ddragon.leagueoflegends.com/cdn/14.19.1/img/champion/{}.png",
             champion_data.id_name
         ));
 

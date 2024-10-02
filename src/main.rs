@@ -9,6 +9,7 @@ use module::championsinfos::championsinfos::championsinfos;
 use module::followgames::followgames::followgames;
 use module::lolstats::lolstats::lolstats;
 use module::loop_module::loop_module::{check_and_update_db, fetch_champion_data};
+use module::randomchampions::randomchampions::randomchampions;
 use module::whoisfollowed::whoisfollowed::whoisfollowed;
 use mongodb::bson::doc;
 use mongodb::{
@@ -79,7 +80,13 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
     // Configurer le framework Poise avec les commandes
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![lolstats(), followgames(), whoisfollowed(), championsinfos()],
+            commands: vec![
+                lolstats(),
+                followgames(),
+                whoisfollowed(),
+                championsinfos(),
+                randomchampions(),
+            ],
             ..Default::default()
         })
         .setup(move |_ctx, _ready, _framework| {

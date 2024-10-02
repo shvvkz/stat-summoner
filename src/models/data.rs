@@ -27,7 +27,7 @@ pub struct EmojiId {
     pub id_emoji: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ChampionData {
     pub name: String,
     pub id_name: String,
@@ -39,7 +39,7 @@ pub struct ChampionData {
     pub core_build: CoreBuildData,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RunesData {
     pub parent_primary_rune: String,
     pub child_primary_rune_1: String,
@@ -52,7 +52,7 @@ pub struct RunesData {
     pub tertiary_rune_3: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CoreBuildData {
     pub first: String,
     pub second: String,
