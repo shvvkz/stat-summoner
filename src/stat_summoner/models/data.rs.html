@@ -87,7 +87,7 @@
     <span class="kw">pub </span>id_emoji: String,
 }
 
-<span class="attr">#[derive(Debug, Serialize, Deserialize)]
+<span class="attr">#[derive(Debug, Serialize, Deserialize, Clone)]
 </span><span class="kw">pub struct </span>ChampionData {
     <span class="kw">pub </span>name: String,
     <span class="kw">pub </span>id_name: String,
@@ -99,7 +99,7 @@
     <span class="kw">pub </span>core_build: CoreBuildData,
 }
 
-<span class="attr">#[derive(Debug, Serialize, Deserialize)]
+<span class="attr">#[derive(Debug, Serialize, Deserialize, Clone)]
 </span><span class="kw">pub struct </span>RunesData {
     <span class="kw">pub </span>parent_primary_rune: String,
     <span class="kw">pub </span>child_primary_rune_1: String,
@@ -112,7 +112,7 @@
     <span class="kw">pub </span>tertiary_rune_3: String,
 }
 
-<span class="attr">#[derive(Debug, Serialize, Deserialize)]
+<span class="attr">#[derive(Debug, Serialize, Deserialize, Clone)]
 </span><span class="kw">pub struct </span>CoreBuildData {
     <span class="kw">pub </span>first: String,
     <span class="kw">pub </span>second: String,

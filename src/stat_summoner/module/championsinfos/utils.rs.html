@@ -357,7 +357,7 @@
     <span class="kw">let </span>banrate = champion_data.banrate.parse::&lt;f64&gt;().unwrap_or(<span class="number">0.0</span>) * <span class="number">100.0</span>;
 
     <span class="kw">let </span>runes_description = <span class="macro">format!</span>(
-        <span class="string">"**Rune principale :** {}\n{} {} {}\n\n**Runes secondaires :** \n{} {}\n\n**Fragments :** {} {} {}"</span>,
+        <span class="string">"**Primary Rune:** {}\n{} {} {}\n\n**Secondary Runes:** \n{} {}\n\n**Shards:** {} {} {}"</span>,
         primary_rune_emoji,
         child_primary_rune_1_emoji,
         child_primary_rune_2_emoji,
@@ -374,19 +374,19 @@
         core_item_1_emoji, core_item_2_emoji, core_item_3_emoji
     );
     <span class="kw">let </span>embed = CreateEmbed::default()
-        .title(<span class="macro">format!</span>(<span class="string">"Informations sur {}"</span>, champion_data.name))
+        .title(<span class="macro">format!</span>(<span class="string">"Informations about {}"</span>, champion_data.name))
         .color(<span class="number">0x00ff00</span>)
-        .field(<span class="string">"Rôles"</span>, champion_data.role.join(<span class="string">", "</span>), <span class="bool-val">false</span>)
+        .field(<span class="string">"Role"</span>, champion_data.role.join(<span class="string">", "</span>), <span class="bool-val">false</span>)
         .field(<span class="string">"Winrate"</span>, <span class="macro">format!</span>(<span class="string">"{:.2}%"</span>, winrate), <span class="bool-val">true</span>)
         .field(<span class="string">"Banrate"</span>, <span class="macro">format!</span>(<span class="string">"{:.2}%"</span>, banrate), <span class="bool-val">true</span>)
-        .field(<span class="string">"Popularité"</span>, <span class="macro">format!</span>(<span class="string">"{:.2}%"</span>, popularity), <span class="bool-val">true</span>)
+        .field(<span class="string">"Popularity"</span>, <span class="macro">format!</span>(<span class="string">"{:.2}%"</span>, popularity), <span class="bool-val">true</span>)
         .field(<span class="string">"Runes"</span>, runes_description, <span class="bool-val">false</span>)
-        .field(<span class="string">"Build d'objets"</span>, core_build_description, <span class="bool-val">false</span>)
+        .field(<span class="string">"Build"</span>, core_build_description, <span class="bool-val">false</span>)
         .footer(CreateEmbedFooter::new(
-            <span class="string">"Ce message sera supprimé dans 60 secondes."</span>,
+            <span class="string">"This message will be deleted in 60 seconds."</span>,
         ))
         .thumbnail(<span class="macro">format!</span>(
-            <span class="string">"https://ddragon.leagueoflegends.com/cdn/14.14.1/img/champion/{}.png"</span>,
+            <span class="string">"https://ddragon.leagueoflegends.com/cdn/14.19.1/img/champion/{}.png"</span>,
             champion_data.id_name
         ));
 
