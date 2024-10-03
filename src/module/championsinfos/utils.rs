@@ -196,8 +196,7 @@ pub async fn create_embed_champions_info(
         ))
         .thumbnail(format!(
             "https://ddragon.leagueoflegends.com/cdn/{}/img/champion/{}.png",
-            version,
-            champion_data.id_name
+            version, champion_data.id_name
         ));
 
     Ok(embed)

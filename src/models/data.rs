@@ -1,8 +1,8 @@
 use mongodb::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tokio::sync::RwLock;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 pub struct Data {
     pub riot_api_key: String,
     pub mongo_client: Client,
