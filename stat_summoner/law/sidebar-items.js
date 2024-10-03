@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["privacy_policy","terms_of_service"]};
