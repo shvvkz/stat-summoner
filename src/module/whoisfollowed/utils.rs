@@ -195,7 +195,8 @@ pub fn create_embed_followed_summoner(data: Value) -> CreateReply {
         .color(0xA020F0)
         .footer(CreateEmbedFooter::new(
             "This message will be deleted in 60 seconds.",
-        ));
+        ))
+        .thumbnail("https://i.postimg.cc/VL3pc27P/Frame-102-1.png");
 
     if tracked_summoners.is_empty() {
         embed = embed.field(
@@ -214,7 +215,7 @@ pub fn create_embed_followed_summoner(data: Value) -> CreateReply {
 
         embed = embed.field(name, format!("Follow ends in: {}", time_remaining), false);
     }
-
+    
     CreateReply {
         embeds: vec![embed],
         ..Default::default()
