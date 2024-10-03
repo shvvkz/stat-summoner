@@ -3,6 +3,7 @@ mod models;
 mod module;
 mod riot_api;
 mod utils;
+mod law;
 
 use std::sync::Arc;
 
