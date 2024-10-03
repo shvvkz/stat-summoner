@@ -82,7 +82,7 @@ pub async fn championsinfos(ctx: poise::ApplicationContext<'_, Data, Error>) -> 
     };
 
     let input_name = modal_data.champion_name.trim().to_lowercase();
-    let dd_json = &ctx.data().dd_json;
+    let dd_json = &*ctx.data().dd_json.read().await;
     let champion_names = get_champion_names(dd_json);
     if champion_names.is_empty() {
         let error_message = "Impossible de récupérer la liste des champions.";

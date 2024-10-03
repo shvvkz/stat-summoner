@@ -61,7 +61,7 @@ pub async fn create_and_send_embed_lolstats(
     ctx: &poise::ApplicationContext<'_, Data, Error>,
     collection_emoji: Collection<EmojiId>,
 ) -> CreateReply {
-    let dd_json = &ctx.data().dd_json;
+    let dd_json = &*ctx.data().dd_json.read().await;
     let champions_data = dd_json["data"].as_object().unwrap();
 
     let solo_rank = extract_rank_info(solo_rank);

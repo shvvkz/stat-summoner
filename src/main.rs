@@ -4,6 +4,8 @@ mod module;
 mod riot_api;
 mod utils;
 
+use std::sync::Arc;
+
 use models::data::Data;
 use module::championsinfos::championsinfos::championsinfos;
 use module::followgames::followgames::followgames;
@@ -19,6 +21,7 @@ use mongodb::{
 use poise::serenity_prelude::{self as serenity};
 use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
+use tokio::sync::RwLock;
 use tokio::time::{sleep, Duration};
 use tracing::log::error;
 
@@ -75,7 +78,9 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
     let mongo_client_clone = mongo_client.clone();
     let mongo_client_clone_2 = mongo_client.clone();
     let riot_api_key_clone = riot_api_key.clone();
-    let dd_json = riot_api::open_dd_json().await.unwrap();
+    let dd_json_value = riot_api::open_dd_json().await.unwrap();
+    let dd_json = Arc::new(RwLock::new(dd_json_value));
+    let dd_json_clone_for_loop = dd_json.clone();
 
     // Configurer le framework Poise avec les commandes
     let framework = poise::Framework::builder()
@@ -127,6 +132,16 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
             match fetch_champion_data(&mongo_client_clone_2).await {
                 Ok(_) => println!("Champion data updated successfully."),
                 Err(e) => error!("Error updating champion data: {:?}", e),
+            }
+            match riot_api::open_dd_json().await {
+                Ok(new_dd_json) => {
+                    let mut dd_json_write = dd_json_clone_for_loop.write().await;
+                    *dd_json_write = new_dd_json;
+                    println!("DataDragon JSON updated successfully.");
+                }
+                Err(e) => {
+                    eprintln!("Error updating DataDragon JSON : {:?}", e);
+                }
             }
             sleep(Duration::from_secs(60 * 60 * 24)).await; // Attendre 24 heures
         }

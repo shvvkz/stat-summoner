@@ -3,6 +3,7 @@ use crate::models::error::Error;
 use crate::utils::get_emoji;
 use mongodb::Collection;
 use poise::serenity_prelude::{CreateEmbed, CreateEmbedFooter};
+use serde_json::Value;
 
 /// ⚙️ Constructs a Discord embed containing detailed information about a League of Legends champion.
 ///
@@ -176,6 +177,11 @@ pub async fn create_embed_champions_info(
         "{} {} {}",
         core_item_1_emoji, core_item_2_emoji, core_item_3_emoji
     );
+    let version_json: Value = reqwest::get("https://ddragon.leagueoflegends.com/api/versions.json")
+        .await?
+        .json()
+        .await?;
+    let version = version_json[0].as_str().unwrap();
     let embed = CreateEmbed::default()
         .title(format!("Informations about {}", champion_data.name))
         .color(0x00ff00)
@@ -189,7 +195,8 @@ pub async fn create_embed_champions_info(
             "This message will be deleted in 60 seconds.",
         ))
         .thumbnail(format!(
-            "https://ddragon.leagueoflegends.com/cdn/14.19.1/img/champion/{}.png",
+            "https://ddragon.leagueoflegends.com/cdn/{}/img/champion/{}.png",
+            version,
             champion_data.id_name
         ));
 
