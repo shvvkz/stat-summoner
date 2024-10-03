@@ -215,7 +215,7 @@ pub fn create_embed_followed_summoner(data: Value) -> CreateReply {
 
         embed = embed.field(name, format!("Follow ends in: {}", time_remaining), false);
     }
-    
+
     CreateReply {
         embeds: vec![embed],
         ..Default::default()
