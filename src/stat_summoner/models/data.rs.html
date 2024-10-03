@@ -58,13 +58,17 @@
 <a href="#58" id="58">58</a>
 <a href="#59" id="59">59</a>
 <a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
+<a href="#62" id="62">62</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>mongodb::Client;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>serde_json::Value;
+<span class="kw">use </span>std::sync::Arc;
+<span class="kw">use </span>tokio::sync::RwLock;
 <span class="kw">pub struct </span>Data {
     <span class="kw">pub </span>riot_api_key: String,
     <span class="kw">pub </span>mongo_client: Client,
-    <span class="kw">pub </span>dd_json: Value,
+    <span class="kw">pub </span>dd_json: Arc&lt;RwLock&lt;Value&gt;&gt;,
 }
 
 <span class="attr">#[derive(Debug, Serialize, Deserialize)]

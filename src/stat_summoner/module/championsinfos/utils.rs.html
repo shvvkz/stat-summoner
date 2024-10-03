@@ -195,11 +195,18 @@
 <a href="#195" id="195">195</a>
 <a href="#196" id="196">196</a>
 <a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::data::{ChampionData, EmojiId};
 <span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
 <span class="kw">use </span><span class="kw">crate</span>::utils::get_emoji;
 <span class="kw">use </span>mongodb::Collection;
 <span class="kw">use </span>poise::serenity_prelude::{CreateEmbed, CreateEmbedFooter};
+<span class="kw">use </span>serde_json::Value;
 
 <span class="doccomment">/// ⚙️ Constructs a Discord embed containing detailed information about a League of Legends champion.
 ///
@@ -373,6 +380,11 @@
         <span class="string">"{} {} {}"</span>,
         core_item_1_emoji, core_item_2_emoji, core_item_3_emoji
     );
+    <span class="kw">let </span>version_json: Value = reqwest::get(<span class="string">"https://ddragon.leagueoflegends.com/api/versions.json"</span>)
+        .<span class="kw">await</span><span class="question-mark">?
+        </span>.json()
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span>version = version_json[<span class="number">0</span>].as_str().unwrap();
     <span class="kw">let </span>embed = CreateEmbed::default()
         .title(<span class="macro">format!</span>(<span class="string">"Informations about {}"</span>, champion_data.name))
         .color(<span class="number">0x00ff00</span>)
@@ -386,8 +398,8 @@
             <span class="string">"This message will be deleted in 60 seconds."</span>,
         ))
         .thumbnail(<span class="macro">format!</span>(
-            <span class="string">"https://ddragon.leagueoflegends.com/cdn/14.19.1/img/champion/{}.png"</span>,
-            champion_data.id_name
+            <span class="string">"https://ddragon.leagueoflegends.com/cdn/{}/img/champion/{}.png"</span>,
+            version, champion_data.id_name
         ));
 
     <span class="prelude-val">Ok</span>(embed)

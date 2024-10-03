@@ -133,11 +133,28 @@
 <a href="#133" id="133">133</a>
 <a href="#134" id="134">134</a>
 <a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
 </pre></div><pre class="rust"><code><span class="kw">mod </span>embed;
 <span class="kw">mod </span>models;
 <span class="kw">mod </span>module;
 <span class="kw">mod </span>riot_api;
 <span class="kw">mod </span>utils;
+
+<span class="kw">use </span>std::sync::Arc;
 
 <span class="kw">use </span>models::data::Data;
 <span class="kw">use </span>module::championsinfos::championsinfos::championsinfos;
@@ -154,6 +171,7 @@
 <span class="kw">use </span>poise::serenity_prelude::{<span class="self">self </span><span class="kw">as </span>serenity};
 <span class="kw">use </span>shuttle_runtime::SecretStore;
 <span class="kw">use </span>shuttle_serenity::ShuttleSerenity;
+<span class="kw">use </span>tokio::sync::RwLock;
 <span class="kw">use </span>tokio::time::{sleep, Duration};
 <span class="kw">use </span>tracing::log::error;
 
@@ -210,7 +228,9 @@
     <span class="kw">let </span>mongo_client_clone = mongo_client.clone();
     <span class="kw">let </span>mongo_client_clone_2 = mongo_client.clone();
     <span class="kw">let </span>riot_api_key_clone = riot_api_key.clone();
-    <span class="kw">let </span>dd_json = riot_api::open_dd_json().<span class="kw">await</span>.unwrap();
+    <span class="kw">let </span>dd_json_value = riot_api::open_dd_json().<span class="kw">await</span>.unwrap();
+    <span class="kw">let </span>dd_json = Arc::new(RwLock::new(dd_json_value));
+    <span class="kw">let </span>dd_json_clone_for_loop = dd_json.clone();
 
     <span class="comment">// Configurer le framework Poise avec les commandes
     </span><span class="kw">let </span>framework = poise::Framework::builder()
@@ -262,6 +282,16 @@
             <span class="kw">match </span>fetch_champion_data(<span class="kw-2">&amp;</span>mongo_client_clone_2).<span class="kw">await </span>{
                 <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="macro">println!</span>(<span class="string">"Champion data updated successfully."</span>),
                 <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">error!</span>(<span class="string">"Error updating champion data: {:?}"</span>, e),
+            }
+            <span class="kw">match </span>riot_api::open_dd_json().<span class="kw">await </span>{
+                <span class="prelude-val">Ok</span>(new_dd_json) =&gt; {
+                    <span class="kw">let </span><span class="kw-2">mut </span>dd_json_write = dd_json_clone_for_loop.write().<span class="kw">await</span>;
+                    <span class="kw-2">*</span>dd_json_write = new_dd_json;
+                    <span class="macro">println!</span>(<span class="string">"DataDragon JSON updated successfully."</span>);
+                }
+                <span class="prelude-val">Err</span>(e) =&gt; {
+                    <span class="macro">eprintln!</span>(<span class="string">"Error updating DataDragon JSON : {:?}"</span>, e);
+                }
             }
             sleep(Duration::from_secs(<span class="number">60 </span>* <span class="number">60 </span>* <span class="number">24</span>)).<span class="kw">await</span>; <span class="comment">// Attendre 24 heures
         </span>}

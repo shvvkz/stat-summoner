@@ -406,7 +406,7 @@
     ctx: <span class="kw-2">&amp;</span>poise::ApplicationContext&lt;<span class="lifetime">'_</span>, Data, Error&gt;,
     collection_emoji: Collection&lt;EmojiId&gt;,
 ) -&gt; CreateReply {
-    <span class="kw">let </span>dd_json = <span class="kw-2">&amp;</span>ctx.data().dd_json;
+    <span class="kw">let </span>dd_json = <span class="kw-2">&amp;*</span>ctx.data().dd_json.read().<span class="kw">await</span>;
     <span class="kw">let </span>champions_data = dd_json[<span class="string">"data"</span>].as_object().unwrap();
 
     <span class="kw">let </span>solo_rank = extract_rank_info(solo_rank);

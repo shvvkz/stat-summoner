@@ -217,7 +217,7 @@
     };
 
     <span class="kw">let </span>input_name = modal_data.champion_name.trim().to_lowercase();
-    <span class="kw">let </span>dd_json = <span class="kw-2">&amp;</span>ctx.data().dd_json;
+    <span class="kw">let </span>dd_json = <span class="kw-2">&amp;*</span>ctx.data().dd_json.read().<span class="kw">await</span>;
     <span class="kw">let </span>champion_names = get_champion_names(dd_json);
     <span class="kw">if </span>champion_names.is_empty() {
         <span class="kw">let </span>error_message = <span class="string">"Impossible de récupérer la liste des champions."</span>;
