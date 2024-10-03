@@ -220,6 +220,7 @@
 <a href="#220" id="220">220</a>
 <a href="#221" id="221">221</a>
 <a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::data::SummonerFollowedData;
 <span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
 <span class="kw">use </span>chrono::{Duration, Utc};
@@ -417,7 +418,8 @@
         .color(<span class="number">0xA020F0</span>)
         .footer(CreateEmbedFooter::new(
             <span class="string">"This message will be deleted in 60 seconds."</span>,
-        ));
+        ))
+        .thumbnail(<span class="string">"https://i.postimg.cc/VL3pc27P/Frame-102-1.png"</span>);
 
     <span class="kw">if </span>tracked_summoners.is_empty() {
         embed = embed.field(
