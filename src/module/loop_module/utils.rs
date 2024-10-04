@@ -393,7 +393,7 @@ pub async fn get_followed_summoners(
                 followed_summoners.push(followed_summoner);
             }
             Err(e) => {
-                println!("Erreur lors de la récupération d'un document : {:?}", e);
+                log::error!("Erreur lors de la récupération d'un document : {:?}", e);
             }
         }
     }
@@ -506,12 +506,12 @@ fn is_follow_time_expired(followed_summoner: &SummonerFollowedData) -> bool {
 ///
 /// # Notes:
 /// - The `puuid` field is used as the unique identifier for deletion from the MongoDB collection.
-/// - The function logs the `puuid` of the summoner being deleted using `eprintln!`, which outputs the message to the standard error stream.
+/// - The function logs the `puuid` of the summoner being deleted using `log::info!`, which outputs the message to the standard log stream.
 async fn delete_follower(
     collection: &Collection<SummonerFollowedData>,
     followed_summoner: &SummonerFollowedData,
 ) -> Result<(), mongodb::error::Error> {
-    eprintln!("Suppression de {}", followed_summoner.puuid);
+    log::info!("Suppression de {}", followed_summoner.puuid);
     collection
         .delete_one(
             doc! { "puuid": &followed_summoner.puuid, "guild_id": &followed_summoner.guild_id },

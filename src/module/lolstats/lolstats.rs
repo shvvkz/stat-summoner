@@ -173,7 +173,7 @@ pub async fn lolstats(
     .await;
     let sent_message = ctx.send(reply).await?;
     if let Err(e) = schedule_message_deletion(sent_message, ctx).await {
-        eprintln!("Failed to schedule message deletion: {}", e);
+        log::error!("Failed to schedule message deletion: {}", e);
     }
     Ok(())
 }

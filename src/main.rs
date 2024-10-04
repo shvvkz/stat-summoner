@@ -24,7 +24,7 @@ use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
 use tokio::sync::RwLock;
 use tokio::time::{sleep, Duration};
-use tracing::log::error;
+
 
 /// ⚙️ **Function**: Initializes and starts the Discord bot using the Shuttle runtime and Poise framework.
 ///
@@ -120,7 +120,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
             match check_and_update_db(&mongo_client_clone, &riot_api_key_clone, http.clone()).await
             {
                 Ok(_) => (),
-                Err(e) => error!(
+                Err(e) => log::error!(
                     "Erreur lors de la vérification de la base de données : {:?}",
                     e
                 ),
@@ -131,17 +131,17 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
     tokio::spawn(async move {
         loop {
             match fetch_champion_data(&mongo_client_clone_2).await {
-                Ok(_) => println!("Champion data updated successfully."),
-                Err(e) => error!("Error updating champion data: {:?}", e),
+                Ok(_) => log::info!("Champion data updated successfully."),
+                Err(e) => log::error!("Error updating champion data: {:?}", e),
             }
             match riot_api::open_dd_json().await {
                 Ok(new_dd_json) => {
                     let mut dd_json_write = dd_json_clone_for_loop.write().await;
                     *dd_json_write = new_dd_json;
-                    println!("DataDragon JSON updated successfully.");
+                    log::info!("DataDragon JSON updated successfully.");
                 }
                 Err(e) => {
-                    eprintln!("Error updating DataDragon JSON : {:?}", e);
+                    log::error!("Error updating DataDragon JSON : {:?}", e);
                 }
             }
             sleep(Duration::from_secs(60 * 60 * 24)).await; // Attendre 24 heures

@@ -311,7 +311,7 @@ pub async fn open_dd_json() -> Result<Value, Error> {
     .await?
     .json()
     .await?;
-    println!("Data dragon version: {}", version);
+    log::info!("Data dragon version: {}", version);
     Ok(dd_json)
 }
 

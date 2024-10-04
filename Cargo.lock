@@ -2813,6 +2813,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "futures",
+ "log",
  "mongodb",
  "poise",
  "rand",

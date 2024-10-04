@@ -221,6 +221,6 @@ pub async fn fetch_champion_data(mongo_client: &Client) -> Result<(), Box<dyn st
         }
     }
 
-    eprintln!("Mise à jour des données MongoDB terminée.");
+    log::info!("Mise à jour des données MongoDB terminée.");
     Ok(())
 }

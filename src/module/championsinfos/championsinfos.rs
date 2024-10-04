@@ -102,7 +102,6 @@ pub async fn championsinfos(ctx: poise::ApplicationContext<'_, Data, Error>) -> 
         })
         .unwrap();
     let matched_champion_id = get_champion_id(dd_json, matched_champion).unwrap();
-    println!("Champion ID: {}", matched_champion_id);
 
     let mongo_client: &mongodb::Client = &ctx.data().mongo_client;
     let filter = doc! { "id_name": matched_champion_id};
@@ -121,12 +120,12 @@ pub async fn championsinfos(ctx: poise::ApplicationContext<'_, Data, Error>) -> 
             };
             let sent_message = ctx.send(reply).await?;
             if let Err(e) = schedule_message_deletion(sent_message, ctx).await {
-                eprintln!("Failed to schedule message deletion: {}", e);
+                log::error!("Failed to schedule message deletion: {}", e);
             }
         }
         Ok(None) => return Ok(()),
         Err(e) => {
-            eprintln!("Erreur lors de la recherche de l'emoji: {:?}", e);
+            log::error!("Erreur lors de la recherche de l'emoji: {:?}", e);
             return Ok(());
         }
     }

@@ -65,7 +65,6 @@ pub async fn create_embed(
     let solo_emoji = get_emoji(collection_emoji.clone(), "rank", solo_rank_tier)
         .await
         .unwrap_or(solo_rank_tier.to_string());
-    println!("{}", solo_emoji);
 
     let flex_rank_tier = flex_rank["tier"].as_str().unwrap_or("Unknown");
     let flex_emoji = get_emoji(collection_emoji.clone(), "rank", flex_rank_tier)

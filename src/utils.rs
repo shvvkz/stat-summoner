@@ -67,6 +67,7 @@ pub fn is_valid_game_mode(queue_id: i64) -> bool {
 /// "1 year ago"
 /// ```
 pub fn time_since_game_ended(game_end_timestamp: u64) -> String {
+    #[allow(deprecated)]
     let game_end_time = NaiveDateTime::from_timestamp_opt((game_end_timestamp / 1000) as i64, 0)
         .expect("Invalid timestamp");
     let now = Utc::now().naive_utc();
@@ -269,7 +270,7 @@ pub async fn get_emoji(
         }
         Ok(None) => Ok(name.to_string()),
         Err(e) => {
-            eprintln!("Erreur lors de la recherche de l'emoji: {:?}", e);
+            log::error!("Erreur lors de la recherche de l'emoji: {:?}", e);
             Ok(name.to_string())
         }
     }
