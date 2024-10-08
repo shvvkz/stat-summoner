@@ -176,7 +176,7 @@
     };
     <span class="kw">let </span>sent_message = ctx.send(reply).<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = schedule_message_deletion(sent_message, ctx).<span class="kw">await </span>{
-        <span class="macro">eprintln!</span>(<span class="string">"Failed to schedule message deletion: {}"</span>, e);
+        <span class="macro">log::error!</span>(<span class="string">"Failed to schedule message deletion: {}"</span>, e);
     }
     <span class="prelude-val">Ok</span>(())
 }

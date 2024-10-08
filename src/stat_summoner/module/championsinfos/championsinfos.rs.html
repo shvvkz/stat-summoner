@@ -132,7 +132,6 @@
 <a href="#132" id="132">132</a>
 <a href="#133" id="133">133</a>
 <a href="#134" id="134">134</a>
-<a href="#135" id="135">135</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::embed::{create_embed_error, schedule_message_deletion};
 <span class="kw">use </span><span class="kw">crate</span>::models::data::{ChampionData, Data, EmojiId};
 <span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
@@ -237,7 +236,6 @@
         })
         .unwrap();
     <span class="kw">let </span>matched_champion_id = get_champion_id(dd_json, matched_champion).unwrap();
-    <span class="macro">println!</span>(<span class="string">"Champion ID: {}"</span>, matched_champion_id);
 
     <span class="kw">let </span>mongo_client: <span class="kw-2">&amp;</span>mongodb::Client = <span class="kw-2">&amp;</span>ctx.data().mongo_client;
     <span class="kw">let </span>filter = <span class="macro">doc!</span> { <span class="string">"id_name"</span>: matched_champion_id};
@@ -256,12 +254,12 @@
             };
             <span class="kw">let </span>sent_message = ctx.send(reply).<span class="kw">await</span><span class="question-mark">?</span>;
             <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = schedule_message_deletion(sent_message, ctx).<span class="kw">await </span>{
-                <span class="macro">eprintln!</span>(<span class="string">"Failed to schedule message deletion: {}"</span>, e);
+                <span class="macro">log::error!</span>(<span class="string">"Failed to schedule message deletion: {}"</span>, e);
             }
         }
         <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(()),
         <span class="prelude-val">Err</span>(e) =&gt; {
-            <span class="macro">eprintln!</span>(<span class="string">"Erreur lors de la recherche de l'emoji: {:?}"</span>, e);
+            <span class="macro">log::error!</span>(<span class="string">"Erreur lors de la recherche de l'emoji: {:?}"</span>, e);
             <span class="kw">return </span><span class="prelude-val">Ok</span>(());
         }
     }

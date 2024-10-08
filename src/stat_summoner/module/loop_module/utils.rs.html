@@ -1325,7 +1325,7 @@
                 followed_summoners.push(followed_summoner);
             }
             <span class="prelude-val">Err</span>(e) =&gt; {
-                <span class="macro">println!</span>(<span class="string">"Erreur lors de la récupération d'un document : {:?}"</span>, e);
+                <span class="macro">log::error!</span>(<span class="string">"Erreur lors de la récupération d'un document : {:?}"</span>, e);
             }
         }
     }
@@ -1438,12 +1438,12 @@
 ///
 /// # Notes:
 /// - The `puuid` field is used as the unique identifier for deletion from the MongoDB collection.
-/// - The function logs the `puuid` of the summoner being deleted using `eprintln!`, which outputs the message to the standard error stream.
+/// - The function logs the `puuid` of the summoner being deleted using `log::info!`, which outputs the message to the standard log stream.
 </span><span class="kw">async fn </span>delete_follower(
     collection: <span class="kw-2">&amp;</span>Collection&lt;SummonerFollowedData&gt;,
     followed_summoner: <span class="kw-2">&amp;</span>SummonerFollowedData,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(), mongodb::error::Error&gt; {
-    <span class="macro">eprintln!</span>(<span class="string">"Suppression de {}"</span>, followed_summoner.puuid);
+    <span class="macro">log::info!</span>(<span class="string">"Suppression de {}"</span>, followed_summoner.puuid);
     collection
         .delete_one(
             <span class="macro">doc!</span> { <span class="string">"puuid"</span>: <span class="kw-2">&amp;</span>followed_summoner.puuid, <span class="string">"guild_id"</span>: <span class="kw-2">&amp;</span>followed_summoner.guild_id },

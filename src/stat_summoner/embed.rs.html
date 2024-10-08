@@ -282,6 +282,7 @@
 <a href="#282" id="282">282</a>
 <a href="#283" id="283">283</a>
 <a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
 <span class="kw">use </span><span class="kw">crate</span>::models::modal::LolStatsModal;
 <span class="kw">use crate</span>::{
@@ -349,7 +350,6 @@
     <span class="kw">let </span>solo_emoji = get_emoji(collection_emoji.clone(), <span class="string">"rank"</span>, solo_rank_tier)
         .<span class="kw">await
         </span>.unwrap_or(solo_rank_tier.to_string());
-    <span class="macro">println!</span>(<span class="string">"{}"</span>, solo_emoji);
 
     <span class="kw">let </span>flex_rank_tier = flex_rank[<span class="string">"tier"</span>].as_str().unwrap_or(<span class="string">"Unknown"</span>);
     <span class="kw">let </span>flex_emoji = get_emoji(collection_emoji.clone(), <span class="string">"rank"</span>, flex_rank_tier)
@@ -442,7 +442,7 @@
             <span class="bool-val">false
         </span>)
         .footer(CreateEmbedFooter::new(<span class="string">"This message will be deleted in 60 seconds."</span>))
-        .thumbnail(<span class="string">"https://i.postimg.cc/VL3pc27P/Frame-102-1.png"</span>);
+        .thumbnail(<span class="string">"https://i.postimg.cc/9fKf2tYp/Logo.png"</span>);
 
     <span class="prelude-val">Ok</span>(embed)
 }
@@ -485,7 +485,8 @@
         .color(<span class="number">0xff0000</span>)
         .footer(CreateEmbedFooter::new(
             <span class="string">"This message will be deleted in 60 seconds."</span>,
-        ));
+        ))
+        .thumbnail(<span class="string">"https://i.postimg.cc/9fKf2tYp/Logo.png"</span>);
     CreateReply {
         embeds: <span class="macro">vec!</span>[embed],
         ..Default::default()
@@ -521,7 +522,8 @@
         .color(<span class="number">0x00ff00</span>)
         .footer(CreateEmbedFooter::new(
             <span class="string">"This message will be deleted in 60 seconds."</span>,
-        ));
+        ))
+        .thumbnail(<span class="string">"https://i.postimg.cc/9fKf2tYp/Logo.png"</span>);
     CreateReply {
         embeds: <span class="macro">vec!</span>[embed],
         ..Default::default()

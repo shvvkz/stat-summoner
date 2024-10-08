@@ -341,6 +341,7 @@
 <a href="#341" id="341">341</a>
 <a href="#342" id="342">342</a>
 <a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::constants::QUEUE_ID_MAP;
 <span class="kw">use </span><span class="kw">crate</span>::models::data::EmojiId;
 <span class="kw">use </span><span class="kw">crate</span>::models::region::Region;
@@ -410,7 +411,8 @@
 /// "1 year ago"
 /// ```
 </span><span class="kw">pub fn </span>time_since_game_ended(game_end_timestamp: u64) -&gt; String {
-    <span class="kw">let </span>game_end_time = NaiveDateTime::from_timestamp_opt((game_end_timestamp / <span class="number">1000</span>) <span class="kw">as </span>i64, <span class="number">0</span>)
+    <span class="attr">#[allow(deprecated)]
+    </span><span class="kw">let </span>game_end_time = NaiveDateTime::from_timestamp_opt((game_end_timestamp / <span class="number">1000</span>) <span class="kw">as </span>i64, <span class="number">0</span>)
         .expect(<span class="string">"Invalid timestamp"</span>);
     <span class="kw">let </span>now = Utc::now().naive_utc();
     <span class="kw">let </span>duration = now.signed_duration_since(game_end_time);
@@ -612,7 +614,7 @@
         }
         <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) =&gt; <span class="prelude-val">Ok</span>(name.to_string()),
         <span class="prelude-val">Err</span>(e) =&gt; {
-            <span class="macro">eprintln!</span>(<span class="string">"Erreur lors de la recherche de l'emoji: {:?}"</span>, e);
+            <span class="macro">log::error!</span>(<span class="string">"Erreur lors de la recherche de l'emoji: {:?}"</span>, e);
             <span class="prelude-val">Ok</span>(name.to_string())
         }
     }

@@ -148,7 +148,6 @@
 <a href="#148" id="148">148</a>
 <a href="#149" id="149">149</a>
 <a href="#150" id="150">150</a>
-<a href="#151" id="151">151</a>
 </pre></div><pre class="rust"><code><span class="kw">mod </span>embed;
 <span class="kw">mod </span>law;
 <span class="kw">mod </span>models;
@@ -175,7 +174,6 @@
 <span class="kw">use </span>shuttle_serenity::ShuttleSerenity;
 <span class="kw">use </span>tokio::sync::RwLock;
 <span class="kw">use </span>tokio::time::{sleep, Duration};
-<span class="kw">use </span>tracing::log::error;
 
 <span class="doccomment">/// ⚙️ **Function**: Initializes and starts the Discord bot using the Shuttle runtime and Poise framework.
 ///
@@ -271,7 +269,7 @@
             <span class="kw">match </span>check_and_update_db(<span class="kw-2">&amp;</span>mongo_client_clone, <span class="kw-2">&amp;</span>riot_api_key_clone, http.clone()).<span class="kw">await
             </span>{
                 <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; (),
-                <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">error!</span>(
+                <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">log::error!</span>(
                     <span class="string">"Erreur lors de la vérification de la base de données : {:?}"</span>,
                     e
                 ),
@@ -282,17 +280,17 @@
     tokio::spawn(<span class="kw">async move </span>{
         <span class="kw">loop </span>{
             <span class="kw">match </span>fetch_champion_data(<span class="kw-2">&amp;</span>mongo_client_clone_2).<span class="kw">await </span>{
-                <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="macro">println!</span>(<span class="string">"Champion data updated successfully."</span>),
-                <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">error!</span>(<span class="string">"Error updating champion data: {:?}"</span>, e),
+                <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="macro">log::info!</span>(<span class="string">"Champion data updated successfully."</span>),
+                <span class="prelude-val">Err</span>(e) =&gt; <span class="macro">log::error!</span>(<span class="string">"Error updating champion data: {:?}"</span>, e),
             }
             <span class="kw">match </span>riot_api::open_dd_json().<span class="kw">await </span>{
                 <span class="prelude-val">Ok</span>(new_dd_json) =&gt; {
                     <span class="kw">let </span><span class="kw-2">mut </span>dd_json_write = dd_json_clone_for_loop.write().<span class="kw">await</span>;
                     <span class="kw-2">*</span>dd_json_write = new_dd_json;
-                    <span class="macro">println!</span>(<span class="string">"DataDragon JSON updated successfully."</span>);
+                    <span class="macro">log::info!</span>(<span class="string">"DataDragon JSON updated successfully."</span>);
                 }
                 <span class="prelude-val">Err</span>(e) =&gt; {
-                    <span class="macro">eprintln!</span>(<span class="string">"Error updating DataDragon JSON : {:?}"</span>, e);
+                    <span class="macro">log::error!</span>(<span class="string">"Error updating DataDragon JSON : {:?}"</span>, e);
                 }
             }
             sleep(Duration::from_secs(<span class="number">60 </span>* <span class="number">60 </span>* <span class="number">24</span>)).<span class="kw">await</span>; <span class="comment">// Attendre 24 heures
