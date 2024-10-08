@@ -157,7 +157,7 @@ pub async fn create_embed(
             false
         )
         .footer(CreateEmbedFooter::new("This message will be deleted in 60 seconds."))
-        .thumbnail("https://i.postimg.cc/VL3pc27P/Frame-102-1.png");
+        .thumbnail("https://i.postimg.cc/9fKf2tYp/Logo.png");
 
     Ok(embed)
 }
@@ -200,7 +200,8 @@ pub fn create_embed_error(error_message: &str) -> CreateReply {
         .color(0xff0000)
         .footer(CreateEmbedFooter::new(
             "This message will be deleted in 60 seconds.",
-        ));
+        ))
+        .thumbnail("https://i.postimg.cc/9fKf2tYp/Logo.png");
     CreateReply {
         embeds: vec![embed],
         ..Default::default()
@@ -236,7 +237,8 @@ pub fn create_embed_sucess(sucess_message: &str) -> CreateReply {
         .color(0x00ff00)
         .footer(CreateEmbedFooter::new(
             "This message will be deleted in 60 seconds.",
-        ));
+        ))
+        .thumbnail("https://i.postimg.cc/9fKf2tYp/Logo.png");
     CreateReply {
         embeds: vec![embed],
         ..Default::default()

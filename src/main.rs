@@ -25,7 +25,6 @@ use shuttle_serenity::ShuttleSerenity;
 use tokio::sync::RwLock;
 use tokio::time::{sleep, Duration};
 
-
 /// ⚙️ **Function**: Initializes and starts the Discord bot using the Shuttle runtime and Poise framework.
 ///
 /// This function is the entry point for the Discord bot. It retrieves secrets (like the Discord token and Riot API key)
