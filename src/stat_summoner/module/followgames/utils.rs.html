@@ -195,7 +195,7 @@
                     .<span class="kw">await
                 </span>{
                     <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; {
-                        <span class="kw">let </span>success_message = <span class="string">"tracking time has been updated."</span>;
+                        <span class="kw">let </span>success_message = <span class="string">"Success, tracking time has been updated."</span>;
                         <span class="kw">let </span>reply = ctx.send(create_embed_sucess(<span class="kw-2">&amp;</span>success_message)).<span class="kw">await</span><span class="question-mark">?</span>;
                         schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
                         <span class="kw">return </span><span class="prelude-val">Ok</span>(());
