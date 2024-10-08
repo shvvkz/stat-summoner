@@ -57,7 +57,7 @@ pub async fn check_and_add_in_db(
                     .await
                 {
                     Ok(_) => {
-                        let success_message = "tracking time has been updated.";
+                        let success_message = "Success, tracking time has been updated.";
                         let reply = ctx.send(create_embed_sucess(&success_message)).await?;
                         schedule_message_deletion(reply, ctx).await?;
                         return Ok(());
