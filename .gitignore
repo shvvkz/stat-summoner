@@ -1,4 +1,4 @@
 /target
 .shuttle-storage
 Secrets*.toml
-.dist
+.dist.shuttle*
