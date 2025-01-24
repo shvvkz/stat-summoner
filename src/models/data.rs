@@ -7,6 +7,7 @@ pub struct Data {
     pub riot_api_key: String,
     pub mongo_client: Client,
     pub dd_json: Arc<RwLock<Value>>,
+    pub suggestions_channel_id: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -59,4 +60,11 @@ pub struct CoreBuildData {
     pub first: String,
     pub second: String,
     pub third: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BlackList {
+    pub user_id: String,
+    pub username: String,
+    pub created_at: u64,
 }

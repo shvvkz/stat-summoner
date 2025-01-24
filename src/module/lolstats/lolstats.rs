@@ -1,3 +1,8 @@
+use futures::join;
+use poise::Modal;
+use reqwest::Client;
+use std::collections::HashMap;
+
 use crate::embed::{create_embed_error, schedule_message_deletion};
 use crate::models::data::{Data, EmojiId};
 use crate::models::error::Error;
@@ -6,10 +11,6 @@ use crate::models::region::Region;
 use crate::module::lolstats::utils::create_and_send_embed_lolstats;
 use crate::riot_api::{get_champions, get_matchs_id, get_puuid, get_rank_info, get_summoner_id};
 use crate::utils::{determine_solo_flex, region_to_string};
-use futures::join;
-use poise::Modal;
-use reqwest::Client;
-use std::collections::HashMap;
 
 /// Fetches and displays LoL player stats based on user input.
 ///

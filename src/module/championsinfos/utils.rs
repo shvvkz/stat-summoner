@@ -1,9 +1,10 @@
-use crate::models::data::{ChampionData, EmojiId};
-use crate::models::error::Error;
-use crate::utils::get_emoji;
 use mongodb::Collection;
 use poise::serenity_prelude::{CreateEmbed, CreateEmbedFooter};
 use serde_json::Value;
+
+use crate::models::data::{ChampionData, EmojiId};
+use crate::models::error::Error;
+use crate::utils::get_emoji;
 
 /// ⚙️ Constructs a Discord embed containing detailed information about a League of Legends champion.
 ///

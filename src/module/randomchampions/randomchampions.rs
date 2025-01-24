@@ -1,10 +1,11 @@
+use poise::CreateReply;
+
 use crate::embed::schedule_message_deletion;
 use crate::models::data::{Data, EmojiId};
 use crate::models::error::Error;
 use crate::models::role::Role;
 use crate::module::championsinfos::utils::create_embed_champions_info;
 use crate::module::randomchampions::utils::{get_list_champions, get_random_champion};
-use poise::CreateReply;
 
 /// Generates a random League of Legends champion embed and sends it as a Discord message.
 ///
