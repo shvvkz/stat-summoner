@@ -88,8 +88,13 @@ pub async fn can_user_make_suggestion(
     if let Some(user) = collection.find_one(doc! { "user_id": user_id }).await? {
         let user_suggestion_timestamp = user.last_suggestion_at;
         let now = Utc::now().timestamp() as u64;
-        println!("user_suggestion: {}, now: {}, now - user_suggestion: {}",user_suggestion_timestamp, now, now - user_suggestion_timestamp);
-        if now - user_suggestion_timestamp > 3600{
+        println!(
+            "user_suggestion: {}, now: {}, now - user_suggestion: {}",
+            user_suggestion_timestamp,
+            now,
+            now - user_suggestion_timestamp
+        );
+        if now - user_suggestion_timestamp > 3600 {
             Ok(true)
         } else {
             Ok(false)
