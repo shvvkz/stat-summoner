@@ -10,7 +10,7 @@ use crate::models::modal::LolStatsModal;
 use crate::models::region::Region;
 use crate::module::lolstats::utils::create_and_send_embed_lolstats;
 use crate::riot_api::{get_champions, get_matchs_id, get_puuid, get_rank_info, get_summoner_id};
-use crate::utils::{determine_solo_flex, region_to_string};
+use crate::utils::{determine_solo_flex, manage_user, region_to_string};
 
 /// Fetches and displays LoL player stats based on user input.
 ///
@@ -66,6 +66,14 @@ pub async fn lolstats(
             return Ok(());
         }
     };
+
+    manage_user(
+        ctx.author().id.to_string(),
+        ctx.author().name.clone(),
+        &ctx.data().mongo_client,
+        false,
+    )
+    .await?;
 
     let client = Client::new();
     let game_name_space = modal_data.game_name.replace(" ", "%20");

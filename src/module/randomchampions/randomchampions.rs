@@ -6,6 +6,7 @@ use crate::models::error::Error;
 use crate::models::role::Role;
 use crate::module::championsinfos::utils::create_embed_champions_info;
 use crate::module::randomchampions::utils::{get_list_champions, get_random_champion};
+use crate::utils::manage_user;
 
 /// Generates a random League of Legends champion embed and sends it as a Discord message.
 ///
@@ -73,6 +74,14 @@ pub async fn randomchampions(
     ctx: poise::ApplicationContext<'_, Data, Error>,
     #[description = "Select a role (optional)"] role: Option<Role>,
 ) -> Result<(), Error> {
+    manage_user(
+        ctx.author().id.to_string(),
+        ctx.author().name.clone(),
+        &ctx.data().mongo_client,
+        false,
+    )
+    .await?;
+
     let champions_list = get_list_champions(ctx, role).await?;
     let mongo_client = &ctx.data().mongo_client;
     let collection_emoji = mongo_client

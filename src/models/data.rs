@@ -62,9 +62,13 @@ pub struct CoreBuildData {
     pub third: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct BlackList {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct User {
     pub user_id: String,
     pub username: String,
+    pub last_command_at: u64,
+    pub count_command: u64,
+    pub last_suggestion_at: u64,
+    pub is_blacklisted: bool,
     pub created_at: u64,
 }

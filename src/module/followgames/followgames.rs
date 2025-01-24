@@ -10,6 +10,7 @@ use crate::models::modal::FollowGamesModal;
 use crate::models::region::Region;
 use crate::module::followgames::utils::check_and_add_in_db;
 use crate::riot_api::{get_matchs_id, get_puuid, get_summoner_id};
+use crate::utils::manage_user;
 use crate::utils::region_to_string;
 
 /// Starts following a player's games for a specified duration.
@@ -62,6 +63,14 @@ pub async fn followgames(
             return Ok(());
         }
     };
+
+    manage_user(
+        ctx.author().id.to_string(),
+        ctx.author().name.clone(),
+        &ctx.data().mongo_client,
+        false,
+    )
+    .await?;
 
     let time_followed = match modal_data.time_followed.trim().parse::<u32>() {
         Ok(value) => value,

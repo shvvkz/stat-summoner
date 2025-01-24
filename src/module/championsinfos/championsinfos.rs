@@ -7,7 +7,7 @@ use crate::models::data::{ChampionData, Data, EmojiId};
 use crate::models::error::Error;
 use crate::models::modal::ChampionsInfosModal;
 use crate::module::championsinfos::utils::create_embed_champions_info;
-use crate::utils::{get_champion_id, get_champion_names};
+use crate::utils::{get_champion_id, get_champion_names, manage_user};
 
 /// Fetches and displays detailed information about a League of Legends champion based on user input.
 ///
@@ -81,6 +81,14 @@ pub async fn championsinfos(ctx: poise::ApplicationContext<'_, Data, Error>) -> 
             return Ok(());
         }
     };
+
+    manage_user(
+        ctx.author().id.to_string(),
+        ctx.author().name.clone(),
+        &ctx.data().mongo_client,
+        false,
+    )
+    .await?;
 
     let input_name = modal_data.champion_name.trim().to_lowercase();
     let dd_json = &*ctx.data().dd_json.read().await;

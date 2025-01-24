@@ -1,9 +1,9 @@
 use crate::models::constants::QUEUE_ID_MAP;
-use crate::models::data::EmojiId;
+use crate::models::data::{EmojiId, User};
 use crate::models::region::Region;
 use chrono::{NaiveDateTime, Utc};
-use mongodb::bson::doc;
-use mongodb::Collection;
+use mongodb::bson::{doc, Bson};
+use mongodb::{Client, Collection};
 use serde::de::value::Error;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -339,6 +339,76 @@ pub fn get_champion_id(dd_json: &Value, name: &str) -> Option<String> {
             }
         }
     }
-    // Si aucun champion correspondant n'est trouvé, retourner None
     None
+}
+
+async fn create_user(
+    user_id: String,
+    username: String,
+    mongo_client: &Client,
+    is_command_suggestion: bool,
+) -> Result<(), mongodb::error::Error> {
+    let collection = mongo_client
+        .database("stat-summoner")
+        .collection::<User>("users");
+    let user = User {
+        user_id,
+        username,
+        last_command_at: Utc::now().timestamp() as u64,
+        count_command: 1,
+        last_suggestion_at: if is_command_suggestion {
+            Utc::now().timestamp() as u64
+        } else {
+            0
+        },
+        is_blacklisted: false,
+        created_at: Utc::now().timestamp() as u64,
+    };
+    collection.insert_one(user).await?;
+    Ok(())
+}
+
+async fn update_user(
+    user_id: String,
+    mongo_client: &Client,
+    is_command_suggestion: bool,
+) -> Result<(), mongodb::error::Error> {
+    let collection = mongo_client
+        .database("stat-summoner")
+        .collection::<User>("users");
+    let filter = doc! { "user_id": user_id };
+    let update = if is_command_suggestion {
+        doc! { "$inc": { "count_command": Bson::Int32(1) }, "$set": { "last_command_at": Bson::Int64(Utc::now().timestamp()), "last_suggestion_at": Bson::Int64(Utc::now().timestamp()) } }
+    } else {
+        doc! { "$inc": { "count_command": Bson::Int32(1) }, "$set": { "last_command_at": Bson::Int64(Utc::now().timestamp()) } }
+    };
+    collection.update_one(filter, update).await?;
+    Ok(())
+}
+
+async fn is_user_in_db(
+    user_id: String,
+    mongo_client: &Client,
+) -> Result<bool, mongodb::error::Error> {
+    let collection = mongo_client
+        .database("stat-summoner")
+        .collection::<User>("users");
+    let filter = doc! { "user_id": user_id };
+    let user = collection.find_one(filter).await?;
+    Ok(user.is_some())
+}
+
+pub async fn manage_user(
+    user_id: String,
+    username: String,
+    mongo_client: &Client,
+    is_command_suggestion: bool,
+) -> Result<(), mongodb::error::Error> {
+    let is_user = is_user_in_db(user_id.clone(), mongo_client).await?;
+    if is_user {
+        update_user(user_id, mongo_client, is_command_suggestion).await?;
+    } else {
+        create_user(user_id, username, mongo_client, is_command_suggestion).await?;
+    }
+    Ok(())
 }

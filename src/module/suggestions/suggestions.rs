@@ -4,10 +4,11 @@ use poise::Modal;
 
 use crate::embed::create_embed_success;
 use crate::embed::{create_embed_error, schedule_message_deletion};
-use crate::models::data::{BlackList, Data};
+use crate::models::data::{Data, User};
 use crate::models::error::Error;
 use crate::models::modal::SuggestionsModal;
-use crate::module::suggestions::utils::is_user_blacklisted;
+use crate::module::suggestions::utils::{can_user_make_suggestion, is_user_blacklisted};
+use crate::utils::manage_user;
 
 /// Handles suggestions submitted by users.
 ///
@@ -66,7 +67,7 @@ pub async fn suggestion(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resu
     let mongo_client = &ctx.data().mongo_client;
     let collection = mongo_client
         .database("stat-summoner")
-        .collection::<BlackList>("black_list");
+        .collection::<User>("users");
 
     if is_user_blacklisted(&collection, &user_id).await? {
         let error_message = "You are blacklisted from making suggestions.";
@@ -74,6 +75,22 @@ pub async fn suggestion(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resu
         schedule_message_deletion(reply, ctx).await?;
         return Ok(());
     }
+
+    if !can_user_make_suggestion(&collection, &user_id).await? {
+        let error_message =
+            "You cannot make a new suggestion yet. Please wait a while before trying again.";
+        let reply = ctx.send(create_embed_error(&error_message)).await?;
+        schedule_message_deletion(reply, ctx).await?;
+        return Ok(());
+    }
+
+    manage_user(
+        ctx.author().id.to_string(),
+        ctx.author().name.clone(),
+        &ctx.data().mongo_client,
+        true,
+    )
+    .await?;
 
     let modal_data = match SuggestionsModal::execute(ctx).await {
         Ok(Some(data)) => data,
@@ -101,7 +118,7 @@ pub async fn suggestion(ctx: poise::ApplicationContext<'_, Data, Error>) -> Resu
         .timestamp(Utc::now())
         .color(0x00FF00);
 
-    let custom_id = format!("blacklist_user:{}|{}", user_id, username);
+    let custom_id = format!("blacklist_user:{}", user_id);
     let button = poise::serenity_prelude::CreateButton::new("Blacklist User")
         .custom_id(custom_id)
         .label("Blacklist User")

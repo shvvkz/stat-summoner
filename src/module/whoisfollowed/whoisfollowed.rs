@@ -4,6 +4,7 @@ use crate::models::error::Error;
 use crate::module::whoisfollowed::utils::{
     create_embed_followed_summoner, get_data_followed_summoner,
 };
+use crate::utils::manage_user;
 use mongodb::bson::doc;
 
 /// Retrieves and displays the list of summoners followed in the current Discord guild.
@@ -49,6 +50,14 @@ use mongodb::bson::doc;
 /// This command will create an embed showing all followed summoners in the guild where the command is run, along with their remaining follow time.
 #[poise::command(slash_command)]
 pub async fn whoisfollowed(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(), Error> {
+    manage_user(
+        ctx.author().id.to_string(),
+        ctx.author().name.clone(),
+        &ctx.data().mongo_client,
+        false,
+    )
+    .await?;
+
     let mongo_client = &ctx.data().mongo_client;
     let collection = mongo_client
         .database("stat-summoner")
