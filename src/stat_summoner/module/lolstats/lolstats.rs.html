@@ -178,7 +178,15 @@
 <a href="#177" id="177">177</a>
 <a href="#178" id="178">178</a>
 <a href="#179" id="179">179</a>
-<a href="#180" id="180">180</a></pre></div><pre class="rust"><code><span class="kw">use </span>futures::join;
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a></pre></div><pre class="rust"><code><span class="kw">use </span>futures::join;
 <span class="kw">use </span>poise::Modal;
 <span class="kw">use </span>reqwest::Client;
 <span class="kw">use </span>std::collections::HashMap;
@@ -190,7 +198,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::models::region::Region;
 <span class="kw">use </span><span class="kw">crate</span>::module::lolstats::utils::create_and_send_embed_lolstats;
 <span class="kw">use </span><span class="kw">crate</span>::riot_api::{get_champions, get_matchs_id, get_puuid, get_rank_info, get_summoner_id};
-<span class="kw">use </span><span class="kw">crate</span>::utils::{determine_solo_flex, region_to_string};
+<span class="kw">use </span><span class="kw">crate</span>::utils::{determine_solo_flex, manage_user, region_to_string};
 
 <span class="doccomment">/// Fetches and displays LoL player stats based on user input.
 ///
@@ -246,6 +254,14 @@
             <span class="kw">return </span><span class="prelude-val">Ok</span>(());
         }
     };
+
+    manage_user(
+        ctx.author().id.to_string(),
+        ctx.author().name.clone(),
+        <span class="kw-2">&amp;</span>ctx.data().mongo_client,
+        <span class="bool-val">false</span>,
+    )
+    .<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="kw">let </span>client = Client::new();
     <span class="kw">let </span>game_name_space = modal_data.game_name.replace(<span class="string">" "</span>, <span class="string">"%20"</span>);

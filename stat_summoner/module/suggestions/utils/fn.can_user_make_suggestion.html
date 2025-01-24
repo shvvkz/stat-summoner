@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="⚙️ Checks if a user can make a new suggestion based on the time of their last suggestion."><title>can_user_make_suggestion in stat_summoner::module::suggestions::utils - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="stat_summoner" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0 (9fc6b4312 2025-01-07)" data-channel="1.84.0" data-search-js="search-92e6798f.js" data-settings-js="settings-0f613d39.js" ><script src="../../../../static.files/storage-59e33391.js"></script><script defer src="sidebar-items.js"></script><script defer src="../../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-044be391.svg"></head><body class="rustdoc fn"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../../stat_summoner/index.html">stat_<wbr>summoner</a><span class="version">0.6.1</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">can_<wbr>user_<wbr>make_<wbr>suggestion</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#parameters" title="Parameters:">Parameters:</a></li><li><a href="#returns" title="Returns:">Returns:</a></li><li><a href="#example" title="Example:">Example:</a></li><li><a href="#-notes" title="⚠️ Notes:">⚠️ Notes:</a></li><li><a href="#related-structures" title="Related Structures:">Related Structures:</a></li><li><a href="#dependencies" title="Dependencies:">Dependencies:</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="index.html">In stat_<wbr>summoner::<wbr>module::<wbr>suggestions::<wbr>utils</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><span class="rustdoc-breadcrumbs"><a href="../../../index.html">stat_summoner</a>::<wbr><a href="../../index.html">module</a>::<wbr><a href="../index.html">suggestions</a>::<wbr><a href="index.html">utils</a></span><h1>Function <span class="fn">can_user_make_suggestion</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../../src/stat_summoner/module/suggestions/utils.rs.html#84-105">Source</a> </span></div><pre class="rust item-decl"><code>pub async fn can_user_make_suggestion(
+    collection: &amp;<a class="struct" href="https://docs.rs/mongodb/3.2.0/mongodb/coll/struct.Collection.html" title="struct mongodb::coll::Collection">Collection</a>&lt;<a class="struct" href="../../../models/data/struct.User.html" title="struct stat_summoner::models::data::User">User</a>&gt;,
+    user_id: &amp;<a class="primitive" href="https://doc.rust-lang.org/1.84.0/std/primitive.str.html">str</a>,
+) -&gt; <a class="type" href="https://docs.rs/mongodb/3.2.0/mongodb/error/type.Result.html" title="type mongodb::error::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/1.84.0/std/primitive.bool.html">bool</a>&gt;</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>⚙️ Checks if a user can make a new suggestion based on the time of their last suggestion.</p>
+<p>This asynchronous function queries a MongoDB collection to check the <code>last_suggestion_at</code> timestamp of a user.
+It returns <code>true</code> if the user can make a new suggestion (i.e., more than an hour has passed since their last suggestion),
+and <code>false</code> otherwise.</p>
+<h2 id="parameters"><a class="doc-anchor" href="#parameters">§</a>Parameters:</h2>
+<ul>
+<li><code>collection</code>: A reference to a MongoDB collection of <code>User</code> documents.</li>
+<li><code>user_id</code>: A string slice representing the ID of the user to check.</li>
+</ul>
+<h2 id="returns"><a class="doc-anchor" href="#returns">§</a>Returns:</h2>
+<ul>
+<li><code>Result&lt;bool, mongodb::error::Error&gt;</code>: On success, returns <code>true</code> if the user can make a new suggestion, <code>false</code> otherwise.
+On failure, returns an <code>Error</code> from MongoDB detailing the issue.</li>
+</ul>
+<h2 id="example"><a class="doc-anchor" href="#example">§</a>Example:</h2>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">let </span>can_suggest = can_user_make_suggestion(<span class="kw-2">&amp;</span>collection, <span class="string">"123456789012345678"</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+<span class="kw">if </span>can_suggest {
+    <span class="macro">println!</span>(<span class="string">"User can make a new suggestion."</span>);
+} <span class="kw">else </span>{
+    <span class="macro">println!</span>(<span class="string">"User cannot make a new suggestion yet."</span>);
+}</code></pre></div>
+<h2 id="-notes"><a class="doc-anchor" href="#-notes">§</a>⚠️ Notes:</h2>
+<ul>
+<li>The function uses MongoDB’s <code>find_one</code> method to search for a document with a matching <code>user_id</code>.</li>
+<li>If no matching document is found, the function returns <code>false</code>.</li>
+<li>The function checks if the <code>last_suggestion_at</code> timestamp is more than an hour ago.</li>
+</ul>
+<h2 id="related-structures"><a class="doc-anchor" href="#related-structures">§</a>Related Structures:</h2>
+<ul>
+<li><code>User</code>: Represents the structure of a user in the database.</li>
+</ul>
+<h2 id="dependencies"><a class="doc-anchor" href="#dependencies">§</a>Dependencies:</h2>
+<ul>
+<li>Requires a MongoDB collection containing <code>User</code> documents.</li>
+<li>Uses the <code>chrono</code> crate to handle time calculations.</li>
+</ul>
+</div></details></section></div></main></body></html>

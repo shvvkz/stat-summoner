@@ -136,7 +136,16 @@
 <a href="#135" id="135">135</a>
 <a href="#136" id="136">136</a>
 <a href="#137" id="137">137</a>
-<a href="#138" id="138">138</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::{Duration, Utc};
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::{Duration, Utc};
 <span class="kw">use </span>poise::Modal;
 
 <span class="kw">use </span><span class="kw">crate</span>::embed::create_embed_error;
@@ -148,6 +157,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::models::region::Region;
 <span class="kw">use </span><span class="kw">crate</span>::module::followgames::utils::check_and_add_in_db;
 <span class="kw">use </span><span class="kw">crate</span>::riot_api::{get_matchs_id, get_puuid, get_summoner_id};
+<span class="kw">use </span><span class="kw">crate</span>::utils::manage_user;
 <span class="kw">use </span><span class="kw">crate</span>::utils::region_to_string;
 
 <span class="doccomment">/// Starts following a player's games for a specified duration.
@@ -200,6 +210,14 @@
             <span class="kw">return </span><span class="prelude-val">Ok</span>(());
         }
     };
+
+    manage_user(
+        ctx.author().id.to_string(),
+        ctx.author().name.clone(),
+        <span class="kw-2">&amp;</span>ctx.data().mongo_client,
+        <span class="bool-val">false</span>,
+    )
+    .<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="kw">let </span>time_followed = <span class="kw">match </span>modal_data.time_followed.trim().parse::&lt;u32&gt;() {
         <span class="prelude-val">Ok</span>(value) =&gt; value,

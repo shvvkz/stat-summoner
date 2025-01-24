@@ -133,7 +133,15 @@
 <a href="#132" id="132">132</a>
 <a href="#133" id="133">133</a>
 <a href="#134" id="134">134</a>
-<a href="#135" id="135">135</a></pre></div><pre class="rust"><code><span class="kw">use </span>mongodb::bson::doc;
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a></pre></div><pre class="rust"><code><span class="kw">use </span>mongodb::bson::doc;
 <span class="kw">use </span>poise::{CreateReply, Modal};
 <span class="kw">use </span>strsim::normalized_levenshtein;
 
@@ -142,7 +150,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
 <span class="kw">use </span><span class="kw">crate</span>::models::modal::ChampionsInfosModal;
 <span class="kw">use </span><span class="kw">crate</span>::module::championsinfos::utils::create_embed_champions_info;
-<span class="kw">use </span><span class="kw">crate</span>::utils::{get_champion_id, get_champion_names};
+<span class="kw">use </span><span class="kw">crate</span>::utils::{get_champion_id, get_champion_names, manage_user};
 
 <span class="doccomment">/// Fetches and displays detailed information about a League of Legends champion based on user input.
 ///
@@ -216,6 +224,14 @@
             <span class="kw">return </span><span class="prelude-val">Ok</span>(());
         }
     };
+
+    manage_user(
+        ctx.author().id.to_string(),
+        ctx.author().name.clone(),
+        <span class="kw-2">&amp;</span>ctx.data().mongo_client,
+        <span class="bool-val">false</span>,
+    )
+    .<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="kw">let </span>input_name = modal_data.champion_name.trim().to_lowercase();
     <span class="kw">let </span>dd_json = <span class="kw-2">&amp;*</span>ctx.data().dd_json.read().<span class="kw">await</span>;

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["add_user_to_blacklist","is_user_blacklisted"]};
+window.SIDEBAR_ITEMS = {"fn":["add_user_to_blacklist","can_user_make_suggestion","is_user_blacklisted"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["determine_solo_flex","get_champion_id","get_champion_names","get_emoji","get_game_mode","is_valid_game_mode","region_to_string","seconds_to_time","time_since_game_ended"]};
+window.SIDEBAR_ITEMS = {"fn":["create_user","determine_solo_flex","get_champion_id","get_champion_names","get_emoji","get_game_mode","is_user_in_db","is_valid_game_mode","manage_user","region_to_string","seconds_to_time","time_since_game_ended","update_user"]};

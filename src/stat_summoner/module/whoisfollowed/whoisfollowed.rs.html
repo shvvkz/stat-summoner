@@ -62,12 +62,22 @@
 <a href="#61" id="61">61</a>
 <a href="#62" id="62">62</a>
 <a href="#63" id="63">63</a>
-<a href="#64" id="64">64</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::embed::schedule_message_deletion;
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::embed::schedule_message_deletion;
 <span class="kw">use </span><span class="kw">crate</span>::models::data::{Data, SummonerFollowedData};
 <span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
 <span class="kw">use </span><span class="kw">crate</span>::module::whoisfollowed::utils::{
     create_embed_followed_summoner, get_data_followed_summoner,
 };
+<span class="kw">use </span><span class="kw">crate</span>::utils::manage_user;
 <span class="kw">use </span>mongodb::bson::doc;
 
 <span class="doccomment">/// Retrieves and displays the list of summoners followed in the current Discord guild.
@@ -113,6 +123,14 @@
 /// This command will create an embed showing all followed summoners in the guild where the command is run, along with their remaining follow time.
 </span><span class="attr">#[poise::command(slash_command)]
 </span><span class="kw">pub async fn </span>whoisfollowed(ctx: poise::ApplicationContext&lt;<span class="lifetime">'_</span>, Data, Error&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+    manage_user(
+        ctx.author().id.to_string(),
+        ctx.author().name.clone(),
+        <span class="kw-2">&amp;</span>ctx.data().mongo_client,
+        <span class="bool-val">false</span>,
+    )
+    .<span class="kw">await</span><span class="question-mark">?</span>;
+
     <span class="kw">let </span>mongo_client = <span class="kw-2">&amp;</span>ctx.data().mongo_client;
     <span class="kw">let </span>collection = mongo_client
         .database(<span class="string">"stat-summoner"</span>)

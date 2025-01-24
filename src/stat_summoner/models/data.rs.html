@@ -68,7 +68,11 @@
 <a href="#67" id="67">67</a>
 <a href="#68" id="68">68</a>
 <a href="#69" id="69">69</a>
-<a href="#70" id="70">70</a></pre></div><pre class="rust"><code><span class="kw">use </span>mongodb::Client;
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a></pre></div><pre class="rust"><code><span class="kw">use </span>mongodb::Client;
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="kw">use </span>serde_json::Value;
 <span class="kw">use </span>std::sync::Arc;
@@ -132,10 +136,14 @@
     <span class="kw">pub </span>third: String,
 }
 
-<span class="attr">#[derive(Debug, Serialize, Deserialize, Clone)]
-</span><span class="kw">pub struct </span>BlackList {
+<span class="attr">#[derive(Debug, Serialize, Deserialize)]
+</span><span class="kw">pub struct </span>User {
     <span class="kw">pub </span>user_id: String,
     <span class="kw">pub </span>username: String,
+    <span class="kw">pub </span>last_command_at: u64,
+    <span class="kw">pub </span>count_command: u64,
+    <span class="kw">pub </span>last_suggestion_at: u64,
+    <span class="kw">pub </span>is_blacklisted: bool,
     <span class="kw">pub </span>created_at: u64,
 }
 </code></pre></div></section></main></body></html>

@@ -90,7 +90,16 @@
 <a href="#89" id="89">89</a>
 <a href="#90" id="90">90</a>
 <a href="#91" id="91">91</a>
-<a href="#92" id="92">92</a></pre></div><pre class="rust"><code><span class="kw">use </span>poise::CreateReply;
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a></pre></div><pre class="rust"><code><span class="kw">use </span>poise::CreateReply;
 
 <span class="kw">use </span><span class="kw">crate</span>::embed::schedule_message_deletion;
 <span class="kw">use </span><span class="kw">crate</span>::models::data::{Data, EmojiId};
@@ -98,6 +107,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::models::role::Role;
 <span class="kw">use </span><span class="kw">crate</span>::module::championsinfos::utils::create_embed_champions_info;
 <span class="kw">use </span><span class="kw">crate</span>::module::randomchampions::utils::{get_list_champions, get_random_champion};
+<span class="kw">use </span><span class="kw">crate</span>::utils::manage_user;
 
 <span class="doccomment">/// Generates a random League of Legends champion embed and sends it as a Discord message.
 ///
@@ -165,6 +175,14 @@
     ctx: poise::ApplicationContext&lt;<span class="lifetime">'_</span>, Data, Error&gt;,
     <span class="attr">#[description = <span class="string">"Select a role (optional)"</span>] </span>role: <span class="prelude-ty">Option</span>&lt;Role&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt; {
+    manage_user(
+        ctx.author().id.to_string(),
+        ctx.author().name.clone(),
+        <span class="kw-2">&amp;</span>ctx.data().mongo_client,
+        <span class="bool-val">false</span>,
+    )
+    .<span class="kw">await</span><span class="question-mark">?</span>;
+
     <span class="kw">let </span>champions_list = get_list_champions(ctx, role).<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let </span>mongo_client = <span class="kw-2">&amp;</span>ctx.data().mongo_client;
     <span class="kw">let </span>collection_emoji = mongo_client

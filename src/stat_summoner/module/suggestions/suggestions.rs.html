@@ -119,16 +119,34 @@
 <a href="#118" id="118">118</a>
 <a href="#119" id="119">119</a>
 <a href="#120" id="120">120</a>
-<a href="#121" id="121">121</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::Utc;
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a></pre></div><pre class="rust"><code><span class="kw">use </span>chrono::Utc;
 <span class="kw">use </span>poise::serenity_prelude::{CreateEmbed, CreateMessage};
 <span class="kw">use </span>poise::Modal;
 
 <span class="kw">use </span><span class="kw">crate</span>::embed::create_embed_success;
 <span class="kw">use </span><span class="kw">crate</span>::embed::{create_embed_error, schedule_message_deletion};
-<span class="kw">use </span><span class="kw">crate</span>::models::data::{BlackList, Data};
+<span class="kw">use </span><span class="kw">crate</span>::models::data::{Data, User};
 <span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
 <span class="kw">use </span><span class="kw">crate</span>::models::modal::SuggestionsModal;
-<span class="kw">use </span><span class="kw">crate</span>::module::suggestions::utils::is_user_blacklisted;
+<span class="kw">use </span><span class="kw">crate</span>::module::suggestions::utils::{can_user_make_suggestion, is_user_blacklisted};
+<span class="kw">use </span><span class="kw">crate</span>::utils::manage_user;
 
 <span class="doccomment">/// Handles suggestions submitted by users.
 ///
@@ -187,7 +205,7 @@
     <span class="kw">let </span>mongo_client = <span class="kw-2">&amp;</span>ctx.data().mongo_client;
     <span class="kw">let </span>collection = mongo_client
         .database(<span class="string">"stat-summoner"</span>)
-        .collection::&lt;BlackList&gt;(<span class="string">"black_list"</span>);
+        .collection::&lt;User&gt;(<span class="string">"users"</span>);
 
     <span class="kw">if </span>is_user_blacklisted(<span class="kw-2">&amp;</span>collection, <span class="kw-2">&amp;</span>user_id).<span class="kw">await</span><span class="question-mark">? </span>{
         <span class="kw">let </span>error_message = <span class="string">"You are blacklisted from making suggestions."</span>;
@@ -195,6 +213,22 @@
         schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">return </span><span class="prelude-val">Ok</span>(());
     }
+
+    <span class="kw">if </span>!can_user_make_suggestion(<span class="kw-2">&amp;</span>collection, <span class="kw-2">&amp;</span>user_id).<span class="kw">await</span><span class="question-mark">? </span>{
+        <span class="kw">let </span>error_message =
+            <span class="string">"You cannot make a new suggestion yet. Please wait a while before trying again."</span>;
+        <span class="kw">let </span>reply = ctx.send(create_embed_error(<span class="kw-2">&amp;</span>error_message)).<span class="kw">await</span><span class="question-mark">?</span>;
+        schedule_message_deletion(reply, ctx).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">return </span><span class="prelude-val">Ok</span>(());
+    }
+
+    manage_user(
+        ctx.author().id.to_string(),
+        ctx.author().name.clone(),
+        <span class="kw-2">&amp;</span>ctx.data().mongo_client,
+        <span class="bool-val">true</span>,
+    )
+    .<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="kw">let </span>modal_data = <span class="kw">match </span>SuggestionsModal::execute(ctx).<span class="kw">await </span>{
         <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(data)) =&gt; data,
@@ -222,7 +256,7 @@
         .timestamp(Utc::now())
         .color(<span class="number">0x00FF00</span>);
 
-    <span class="kw">let </span>custom_id = <span class="macro">format!</span>(<span class="string">"blacklist_user:{}|{}"</span>, user_id, username);
+    <span class="kw">let </span>custom_id = <span class="macro">format!</span>(<span class="string">"blacklist_user:{}"</span>, user_id);
     <span class="kw">let </span>button = poise::serenity_prelude::CreateButton::new(<span class="string">"Blacklist User"</span>)
         .custom_id(custom_id)
         .label(<span class="string">"Blacklist User"</span>)
