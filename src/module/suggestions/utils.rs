@@ -1,7 +1,7 @@
-use mongodb::bson::doc;
-use mongodb::Collection;
 use crate::models::data::BlackList;
 use chrono::Utc;
+use mongodb::bson::doc;
+use mongodb::Collection;
 
 /// ⚙️ Checks if a user is blacklisted.
 ///

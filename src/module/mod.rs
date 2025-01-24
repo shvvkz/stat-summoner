@@ -3,5 +3,5 @@ pub mod followgames;
 pub mod lolstats;
 pub mod loop_module;
 pub mod randomchampions;
-pub mod whoisfollowed;
 pub mod suggestions;
+pub mod whoisfollowed;

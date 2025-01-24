@@ -78,7 +78,7 @@ pub async fn handle_button_click(
                         .delete_message(
                             message_component_interaction.channel_id,
                             message_component_interaction.message.id,
-                            None
+                            None,
                         )
                         .await
                     {

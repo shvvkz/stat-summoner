@@ -1,3 +1,4 @@
+pub mod interaction_black_list;
 /// 🛠 **Module suggestions**: Contains the logic and utilities for handling suggestions and interactions related to blacklisting.
 ///
 /// This module organizes the functionality for the `suggestion` command and the interaction handling for
@@ -36,5 +37,4 @@
 ///
 /// As more features are added to this module, they will be included here and imported into the main bot setup.
 pub mod suggestions;
-pub mod interaction_black_list;
 pub mod utils;
