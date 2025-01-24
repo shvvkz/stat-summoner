@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["create_embed","create_embed_error","create_embed_sucess","schedule_message_deletion"]};
+window.SIDEBAR_ITEMS = {"fn":["create_embed","create_embed_error","create_embed_success","schedule_message_deletion"]};

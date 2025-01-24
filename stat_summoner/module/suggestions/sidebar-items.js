@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"mod":["interaction_black_list","suggestions","utils"]};

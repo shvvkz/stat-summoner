@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["add_user_to_blacklist","is_user_blacklisted"]};

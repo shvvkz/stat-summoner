@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ChampionData","CoreBuildData","Data","EmojiId","RunesData","SummonerFollowedData"]};
+window.SIDEBAR_ITEMS = {"struct":["BlackList","ChampionData","CoreBuildData","Data","EmojiId","RunesData","SummonerFollowedData"]};
