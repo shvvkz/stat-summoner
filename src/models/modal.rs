@@ -35,3 +35,11 @@ pub struct ChampionsInfosModal {
     #[placeholder = "Enter the champion name (e.g., Jinx)"]
     pub champion_name: String,
 }
+
+#[derive(Debug, Modal)]
+#[name = "Enter your suggestion"]
+pub struct SuggestionsModal {
+    #[name = "Suggestion"]
+    #[placeholder = "Enter your suggestion"]
+    pub suggestion: String,
+}

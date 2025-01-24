@@ -210,30 +210,30 @@ pub fn create_embed_error(error_message: &str) -> CreateReply {
 
 /// ⚙️ **Function**: Creates a success embed reply for Discord messages.
 ///
-/// This function generates a Discord embed with the title "Sucess", a description provided by the `sucess_message` parameter,
+/// This function generates a Discord embed with the title "Success", a description provided by the `success_message` parameter,
 /// a green color to indicate success, and a footer notifying that the message will be deleted in 60 seconds. It returns a
 /// `CreateReply` containing the embed, suitable for sending as a response to a Discord interaction or message.
 ///
 /// # Parameters:
-/// - `sucess_message`: A string slice that holds the success message to be displayed in the embed's description.
+/// - `success_message`: A string slice that holds the success message to be displayed in the embed's description.
 ///
 /// # Returns:
 /// - `CreateReply`: A Discord reply containing the constructed success embed.
 ///
 /// # ⚠️ Notes:
 /// - The embed's footer is in French: "This message will be deleted in 60 seconds." ("This message will be deleted in 60 seconds.").
-/// - The title "Sucess" appears to have a typo and might be intended as "Success".
+/// - The title "Success" appears to have a typo and might be intended as "Success".
 /// - The embed uses a green color (`0x00ff00`) to visually indicate a successful operation.
 ///
 /// # Example:
 /// ```rust
-/// let reply = create_embed_sucess("Operation completed successfully!");
+/// let reply = create_embed_success("Operation completed successfully!");
 /// // Use `reply` to send the embed in a Discord channel
 /// ```
-pub fn create_embed_sucess(sucess_message: &str) -> CreateReply {
+pub fn create_embed_success(success_message: &str) -> CreateReply {
     let embed: CreateEmbed = CreateEmbed::default()
-        .title("Sucess")
-        .description(sucess_message)
+        .title("Success")
+        .description(success_message)
         .color(0x00ff00)
         .footer(CreateEmbedFooter::new(
             "This message will be deleted in 60 seconds.",

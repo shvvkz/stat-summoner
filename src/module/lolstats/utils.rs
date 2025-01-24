@@ -1,3 +1,9 @@
+use mongodb::Collection;
+use poise::CreateReply;
+use reqwest::Client;
+use serde_json::{Map, Value};
+use std::collections::HashMap;
+
 use crate::embed::create_embed;
 use crate::models::constants::QUEUE_ID_MAP;
 use crate::models::data::{Data, EmojiId};
@@ -5,11 +11,6 @@ use crate::models::error::Error;
 use crate::models::modal::LolStatsModal;
 use crate::riot_api::get_matchs_info;
 use crate::utils::{get_emoji, is_valid_game_mode, seconds_to_time, time_since_game_ended};
-use mongodb::Collection;
-use poise::CreateReply;
-use reqwest::Client;
-use serde_json::{Map, Value};
-use std::collections::HashMap;
 
 /// ⚙️ **Function**: Fetches data and creates an embed displaying League of Legends player stats and match details.
 ///

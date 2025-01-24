@@ -1,12 +1,13 @@
+use mongodb::bson::doc;
+use poise::{CreateReply, Modal};
+use strsim::normalized_levenshtein;
+
 use crate::embed::{create_embed_error, schedule_message_deletion};
 use crate::models::data::{ChampionData, Data, EmojiId};
 use crate::models::error::Error;
 use crate::models::modal::ChampionsInfosModal;
 use crate::module::championsinfos::utils::create_embed_champions_info;
 use crate::utils::{get_champion_id, get_champion_names};
-use mongodb::bson::doc;
-use poise::{CreateReply, Modal};
-use strsim::normalized_levenshtein;
 
 /// Fetches and displays detailed information about a League of Legends champion based on user input.
 ///

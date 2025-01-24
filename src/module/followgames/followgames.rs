@@ -1,3 +1,6 @@
+use chrono::{Duration, Utc};
+use poise::Modal;
+
 use crate::embed::create_embed_error;
 use crate::embed::schedule_message_deletion;
 use crate::models::data::Data;
@@ -8,8 +11,6 @@ use crate::models::region::Region;
 use crate::module::followgames::utils::check_and_add_in_db;
 use crate::riot_api::{get_matchs_id, get_puuid, get_summoner_id};
 use crate::utils::region_to_string;
-use chrono::{Duration, Utc};
-use poise::Modal;
 
 /// Starts following a player's games for a specified duration.
 ///

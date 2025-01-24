@@ -1,8 +1,3 @@
-use crate::models::data::{ChampionData, CoreBuildData, EmojiId, RunesData, SummonerFollowedData};
-use crate::models::error::Error;
-use crate::module::loop_module::utils::{fetch_core_build, fetch_runes};
-use crate::module::loop_module::utils::{get_followed_summoners, process_followed_summoner};
-use crate::riot_api::open_dd_json;
 use futures::executor::block_on;
 use mongodb::bson::{self, doc};
 use mongodb::Client;
@@ -11,6 +6,12 @@ use select::predicate::Predicate;
 use serenity::http::Http;
 use std::sync::Arc;
 use tokio::task;
+
+use crate::models::data::{ChampionData, CoreBuildData, EmojiId, RunesData, SummonerFollowedData};
+use crate::models::error::Error;
+use crate::module::loop_module::utils::{fetch_core_build, fetch_runes};
+use crate::module::loop_module::utils::{get_followed_summoners, process_followed_summoner};
+use crate::riot_api::open_dd_json;
 
 /// ⚙️ **Function**: Checks the database for followed summoners and updates their information from the Riot API.
 ///

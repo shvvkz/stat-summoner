@@ -1,11 +1,3 @@
-use crate::{
-    models::{
-        data::{CoreBuildData, EmojiId, RunesData, SummonerFollowedData},
-        error::Error,
-    },
-    riot_api::{get_matchs_id, get_matchs_info},
-    utils::*,
-};
 use chrono::Utc;
 use futures::StreamExt;
 use mongodb::{bson::doc, Collection};
@@ -15,6 +7,15 @@ use select::document::Document;
 use select::predicate::{Class, Name};
 use serde_json::Value;
 use std::{collections::HashMap, sync::Arc};
+
+use crate::{
+    models::{
+        data::{CoreBuildData, EmojiId, RunesData, SummonerFollowedData},
+        error::Error,
+    },
+    riot_api::{get_matchs_id, get_matchs_info},
+    utils::*,
+};
 
 /// ⚙️ **Function**: Extracts relevant match details for a given summoner from the match information.
 ///

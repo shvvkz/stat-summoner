@@ -13,13 +13,15 @@ use module::followgames::followgames::followgames;
 use module::lolstats::lolstats::lolstats;
 use module::loop_module::loop_module::{check_and_update_db, fetch_champion_data};
 use module::randomchampions::randomchampions::randomchampions;
+use module::suggestions::interaction_black_list::handle_button_click;
+use module::suggestions::suggestions::suggestion;
 use module::whoisfollowed::whoisfollowed::whoisfollowed;
 use mongodb::bson::doc;
 use mongodb::{
     options::{ClientOptions, ServerApi, ServerApiVersion},
     Client,
 };
-use poise::serenity_prelude::{self as serenity};
+use poise::serenity_prelude::{self as serenity, FullEvent};
 use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
 use tokio::sync::RwLock;
@@ -55,7 +57,6 @@ use tokio::time::{sleep, Duration};
 /// The bot will start and listen to commands like `lolstats` once it is running.
 #[shuttle_runtime::main]
 async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleSerenity {
-    // Récupérer le token Discord, la clé Riot API et l'URI MongoDB depuis les secrets
     let discord_token = secret_store
         .get("DISCORD_TOKEN")
         .ok_or_else(|| anyhow::anyhow!("'DISCORD_TOKEN' was not found"))?;
@@ -67,14 +68,21 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
     let mongodb_uri = secret_store
         .get("MONGODB_URI")
         .ok_or_else(|| anyhow::anyhow!("'MONGODB_URI' was not found"))?;
-    // Initialiser MongoDB
+    let suggestions_channel_id = secret_store
+        .get("SUGGESTIONS_CHANNEL_ID")
+        .ok_or_else(|| anyhow::anyhow!("'SUGGESTIONS_CHANNEL_ID' was not found"))?
+        .parse::<u64>()
+        .map_err(|e| anyhow::anyhow!(e))?;
+
     let mut client_options = ClientOptions::parse(&mongodb_uri)
         .await
         .expect("Failed to parse MongoDB URI");
+
     let server_api = ServerApi::builder().version(ServerApiVersion::V1).build();
     client_options.server_api = Some(server_api);
     let mongo_client =
         Client::with_options(client_options).expect("Failed to create MongoDB client");
+
     let mongo_client_clone = mongo_client.clone();
     let mongo_client_clone_2 = mongo_client.clone();
     let riot_api_key_clone = riot_api_key.clone();
@@ -82,7 +90,6 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
     let dd_json = Arc::new(RwLock::new(dd_json_value));
     let dd_json_clone_for_loop = dd_json.clone();
 
-    // Configurer le framework Poise avec les commandes
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands: vec![
@@ -91,19 +98,35 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                 whoisfollowed(),
                 championsinfos(),
                 randomchampions(),
+                suggestion(),
             ],
+            event_handler: |ctx, event, _framework, data| {
+                Box::pin(async move {
+                    if let FullEvent::InteractionCreate { interaction } = event {
+                        if let Err(e) =
+                            handle_button_click(ctx.clone(), interaction.clone(), data).await
+                        {
+                            log::error!("Erreur dans handle_button_click : {:?}", e);
+                        }
+                    }
+                    Ok(())
+                })
+            },
+
             ..Default::default()
         })
         .setup(move |_ctx, _ready, _framework| {
             let riot_api_key = riot_api_key.clone();
             let mongo_client = mongo_client.clone();
             let dd_json = dd_json.clone();
+            let suggestions_channel_id = suggestions_channel_id.clone();
             Box::pin(async move {
                 poise::builtins::register_globally(_ctx, &_framework.options().commands).await?;
                 Ok(Data {
                     riot_api_key,
                     mongo_client,
                     dd_json,
+                    suggestions_channel_id,
                 })
             })
         })
@@ -124,7 +147,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                     e
                 ),
             }
-            sleep(Duration::from_secs(120)).await; // Attendre 2 minutes
+            sleep(Duration::from_secs(120)).await;
         }
     });
     tokio::spawn(async move {
@@ -143,8 +166,9 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
                     log::error!("Error updating DataDragon JSON : {:?}", e);
                 }
             }
-            sleep(Duration::from_secs(60 * 60 * 24)).await; // Attendre 24 heures
+            sleep(Duration::from_secs(60 * 60 * 24)).await
         }
     });
+
     Ok(client.into())
 }

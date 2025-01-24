@@ -1,5 +1,5 @@
 use crate::embed::schedule_message_deletion;
-use crate::embed::{create_embed_error, create_embed_sucess};
+use crate::embed::{create_embed_error, create_embed_success};
 use crate::models::data::{Data, SummonerFollowedData};
 use crate::models::error::Error;
 use crate::models::modal::FollowGamesModal;
@@ -33,7 +33,7 @@ use mongodb::bson::doc;
 ///
 /// # Notes:
 /// - If the user is already being followed, an error message is sent to the Discord channel using `create_embed_error`.
-/// - If the user is successfully added to the database, a success message is sent using `create_embed_sucess`.
+/// - If the user is successfully added to the database, a success message is sent using `create_embed_success`.
 /// - The function makes sure to handle errors from both MongoDB operations and Discord message sending by logging appropriate error messages.
 pub async fn check_and_add_in_db(
     collection: mongodb::Collection<SummonerFollowedData>,
@@ -58,7 +58,7 @@ pub async fn check_and_add_in_db(
                 {
                     Ok(_) => {
                         let success_message = "Success, tracking time has been updated.";
-                        let reply = ctx.send(create_embed_sucess(&success_message)).await?;
+                        let reply = ctx.send(create_embed_success(&success_message)).await?;
                         schedule_message_deletion(reply, ctx).await?;
                         return Ok(());
                     }
@@ -85,8 +85,8 @@ pub async fn check_and_add_in_db(
                 };
                 match collection.insert_one(new_followed_summoner).await {
                     Ok(_) => {
-                        let sucess_message = "User has been followed.";
-                        let reply = ctx.send(create_embed_sucess(&sucess_message)).await?;
+                        let success_message = "User has been followed.";
+                        let reply = ctx.send(create_embed_success(&success_message)).await?;
                         schedule_message_deletion(reply, ctx).await?;
                         return Ok(());
                     }
@@ -115,8 +115,8 @@ pub async fn check_and_add_in_db(
             };
             match collection.insert_one(new_followed_summoner).await {
                 Ok(_) => {
-                    let sucess_message = "User has been followed.";
-                    let reply = ctx.send(create_embed_sucess(&sucess_message)).await?;
+                    let success_message = "User has been followed.";
+                    let reply = ctx.send(create_embed_success(&success_message)).await?;
                     schedule_message_deletion(reply, ctx).await?;
                     return Ok(());
                 }
