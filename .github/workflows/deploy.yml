@@ -22,3 +22,4 @@ jobs:
             DISCORD_TOKEN = '${{ secrets.DISCORD_TOKEN }}'
             MONGODB_URI = '${{ secrets.MONGODB_URI }}'
             RIOT_API_KEY = '${{ secrets.RIOT_API_KEY }}'
+            SUGGESTIONS_CHANNEL_ID = '${{ secrets.SUGGESTIONS_CHANNEL_ID }}'
