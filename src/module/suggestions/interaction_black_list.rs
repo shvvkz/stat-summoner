@@ -1,7 +1,7 @@
 use poise::serenity_prelude::Interaction;
 
 use crate::models::{
-    data::{BlackList, Data},
+    data::{Data, User},
     error::Error,
 };
 
@@ -63,27 +63,26 @@ pub async fn handle_button_click(
 
         if custom_id.starts_with("blacklist_user:") {
             if let Some(data) = custom_id.strip_prefix("blacklist_user:") {
-                if let Some((user_id, username)) = data.split_once('|') {
-                    let mongo_client = ctx_data.mongo_client.clone();
-                    let collection = mongo_client
-                        .database("stat-summoner")
-                        .collection::<BlackList>("black_list");
+                let user_id = data;
+                let mongo_client = ctx_data.mongo_client.clone();
+                let collection = mongo_client
+                    .database("stat-summoner")
+                    .collection::<User>("users");
 
-                    if let Err(e) = add_user_to_blacklist(&collection, user_id, username).await {
-                        log::error!("Erreur lors de l'ajout à la blacklist : {:?}", e);
-                    }
+                if let Err(e) = add_user_to_blacklist(&collection, user_id).await {
+                    log::error!("Erreur lors de l'ajout à la blacklist : {:?}", e);
+                }
 
-                    if let Err(e) = ctx
-                        .http
-                        .delete_message(
-                            message_component_interaction.channel_id,
-                            message_component_interaction.message.id,
-                            None,
-                        )
-                        .await
-                    {
-                        log::error!("Erreur lors de la suppression du message : {:?}", e);
-                    }
+                if let Err(e) = ctx
+                    .http
+                    .delete_message(
+                        message_component_interaction.channel_id,
+                        message_component_interaction.message.id,
+                        None,
+                    )
+                    .await
+                {
+                    log::error!("Erreur lors de la suppression du message : {:?}", e);
                 }
             }
         }
