@@ -11,29 +11,46 @@ pub async fn handle_interaction_button_flex(
     let channel_id = message_component_interaction.message.channel_id;
     let message_id = message_component_interaction.message.id;
     let embed = message_component_interaction.message.embeds.get(0);
+    let user_mention = format!("<@{}>", message_component_interaction.user.id);
+
     if let Some(data) = custom_id.strip_prefix("flex_user:") {
         if let Ok(role) = Role::from_str(data) {
             if let Some(embed) = embed {
-                for field in &embed.fields {
-                    if field.name == role.field_name() && field.value == "TBD" {
-                        let mut new_embed = embed.clone();
-                        for field in &mut new_embed.fields {
-                            if field.name == role.field_name() {
-                                field.value =
-                                    format!("<@{}>", message_component_interaction.user.id);
-                            }
-                        }
-                        let c_embed = CreateEmbed::from(new_embed);
-                        channel_id
-                            .edit_message(
-                                &ctx.http(),
-                                message_id,
-                                poise::serenity_prelude::EditMessage::default().embed(c_embed),
-                            )
-                            .await?;
-                        return Ok(());
+                let mut new_embed = embed.clone();
+                let mut user_already_set = false;
+
+                // Check if the user is already set in any field
+                for field in &new_embed.fields {
+                    if field.value == user_mention {
+                        user_already_set = true;
+                        break;
                     }
                 }
+
+                for field in &mut new_embed.fields {
+                    if field.name == role.field_name() {
+                        if field.value == user_mention {
+                            // If the field value is already the user's mention, set it back to "TBD"
+                            field.value = "TBD".to_string();
+                        } else if field.value == "TBD" {
+                            // If the field value is "TBD", set it to the user's mention
+                            field.value = user_mention.clone();
+                        }
+                    } else if user_already_set && field.value == user_mention {
+                        // If the user is already set in another field, set that field to "TBD"
+                        field.value = "TBD".to_string();
+                    }
+                }
+
+                let c_embed = CreateEmbed::from(new_embed);
+                channel_id
+                    .edit_message(
+                        &ctx.http(),
+                        message_id,
+                        poise::serenity_prelude::EditMessage::default().embed(c_embed),
+                    )
+                    .await?;
+                return Ok(());
             }
         }
     }
