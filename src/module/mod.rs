@@ -5,3 +5,4 @@ pub mod loop_module;
 pub mod randomchampions;
 pub mod suggestions;
 pub mod whoisfollowed;
+pub mod askingforflex;
