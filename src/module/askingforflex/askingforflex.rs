@@ -1,26 +1,15 @@
-use chrono::Utc;
 use poise::serenity_prelude::{
-    CreateEmbed, CreateEmbedFooter, CreateMessage, Interaction, Mentionable, RoleId,
+    CreateEmbed, CreateEmbedFooter, CreateMessage, Mentionable,
 };
-use poise::{CreateReply, Modal};
-
-use crate::embed::create_embed_success;
+use poise::Modal;
 use crate::embed::{create_embed_error, schedule_message_deletion};
-use crate::models::data::{Data, User};
+use crate::models::data::Data;
 use crate::models::error::Error;
 use crate::models::modal::FlexAskingModal;
 use crate::utils::manage_user;
 
 #[poise::command(slash_command)]
 pub async fn askingforflex(ctx: poise::ApplicationContext<'_, Data, Error>) -> Result<(), Error> {
-    let user_id = ctx.author().id.to_string();
-    let username = ctx.author().name.clone();
-
-    let mongo_client = &ctx.data().mongo_client;
-    let collection = mongo_client
-        .database("stat-summoner")
-        .collection::<User>("users");
-
     manage_user(
         ctx.author().id.to_string(),
         ctx.author().name.clone(),
@@ -157,15 +146,4 @@ fn create_embed_flex(author: &str, modal_data: &FlexAskingModal) -> CreateEmbed 
             "This message will be deleted in 60 seconds.",
         ))
         .thumbnail("https://i.postimg.cc/9fKf2tYp/Logo.png")
-}
-
-pub async fn handle_button_click(
-    ctx: poise::serenity_prelude::Context,
-    interaction: Interaction,
-    ctx_data: &Data,
-) -> Result<(), Error> {
-    if let Some(message_component_interaction) = interaction.message_component() {
-        println!("{:?}", message_component_interaction)
-    }
-    Ok(())
 }

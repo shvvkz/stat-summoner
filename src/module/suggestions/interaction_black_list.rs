@@ -1,4 +1,4 @@
-use poise::serenity_prelude::{ComponentInteraction, Interaction};
+use poise::serenity_prelude::ComponentInteraction;
 
 use crate::models::{
     data::{Data, User},
