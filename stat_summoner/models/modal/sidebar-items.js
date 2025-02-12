@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["ChampionsInfosModal","FollowGamesModal","LolStatsModal","SuggestionsModal"]};
+window.SIDEBAR_ITEMS = {"struct":["ChampionsInfosModal","FlexAskingModal","FollowGamesModal","LolStatsModal","SuggestionsModal"]};

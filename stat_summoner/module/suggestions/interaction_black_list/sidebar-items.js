@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["handle_button_click"]};
+window.SIDEBAR_ITEMS = {"fn":["handle_interaction_button_black_list"]};

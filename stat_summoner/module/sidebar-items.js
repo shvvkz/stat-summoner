@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["championsinfos","followgames","lolstats","loop_module","randomchampions","suggestions","whoisfollowed"]};
+window.SIDEBAR_ITEMS = {"mod":["askingforflex","championsinfos","followgames","lolstats","loop_module","randomchampions","suggestions","whoisfollowed"]};
