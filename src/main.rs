@@ -1,13 +1,14 @@
 mod embed;
+mod interactions;
 mod law;
 mod models;
 mod module;
 mod riot_api;
 mod utils;
-mod interactions;
 
 use std::sync::Arc;
 
+use interactions::handle_button_click;
 use models::data::Data;
 use module::askingforflex::askingforflex::askingforflex;
 use module::championsinfos::championsinfos::championsinfos;
@@ -15,7 +16,6 @@ use module::followgames::followgames::followgames;
 use module::lolstats::lolstats::lolstats;
 use module::loop_module::loop_module::{check_and_update_db, fetch_champion_data};
 use module::randomchampions::randomchampions::randomchampions;
-use interactions::handle_button_click;
 use module::suggestions::suggestions::suggestion;
 use module::whoisfollowed::whoisfollowed::whoisfollowed;
 use mongodb::bson::doc;

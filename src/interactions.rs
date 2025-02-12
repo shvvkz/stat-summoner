@@ -4,7 +4,6 @@ use crate::module::askingforflex::interaction_flex_buttons::handle_interaction_b
 use crate::module::suggestions::interaction_black_list::handle_interaction_button_black_list;
 use poise::serenity_prelude::Interaction;
 
-
 pub async fn handle_button_click(
     ctx: poise::serenity_prelude::Context,
     interaction: Interaction,

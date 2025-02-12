@@ -50,7 +50,7 @@ pub struct FlexAskingModal {
     #[name = "Starting Hour"]
     #[placeholder = "Enter start time (e.g., 20:00)"]
     pub starting_hour: String,
-    
+
     #[name = "People to Ask by group role"]
     #[placeholder = "Enter roles (e.g., @LeagueOfLegends)"]
     pub people_to_ask_by_role: String,

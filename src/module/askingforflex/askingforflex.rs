@@ -1,5 +1,7 @@
 use chrono::Utc;
-use poise::serenity_prelude::{CreateEmbed, CreateEmbedFooter, CreateMessage, Interaction, Mentionable, RoleId};
+use poise::serenity_prelude::{
+    CreateEmbed, CreateEmbedFooter, CreateMessage, Interaction, Mentionable, RoleId,
+};
 use poise::{CreateReply, Modal};
 
 use crate::embed::create_embed_success;
@@ -146,37 +148,16 @@ fn create_embed_flex(author: &str, modal_data: &FlexAskingModal) -> CreateEmbed 
         .description("A player is looking for a flex team!")
         .field("Requested by", author, true)
         .field("Start Time", &modal_data.starting_hour, true)
-        .field(
-            "Top:",
-            "TBD",
-            false,
-        )
-        .field(
-            "Jungle:",
-            "TBD",
-            false,
-        )
-        .field(
-            "Mid:",
-            "TBD",
-            false,
-        )
-        .field(
-            "ADCarry:",
-            "TBD",
-            false,
-        )
-        .field(
-            "Support:",
-            "TBD",
-            false,
-        )
+        .field("Top:", "TBD", false)
+        .field("Jungle:", "TBD", false)
+        .field("Mid:", "TBD", false)
+        .field("ADCarry:", "TBD", false)
+        .field("Support:", "TBD", false)
         .footer(CreateEmbedFooter::new(
             "This message will be deleted in 60 seconds.",
         ))
         .thumbnail("https://i.postimg.cc/9fKf2tYp/Logo.png")
 }
-
 
 pub async fn handle_button_click(
     ctx: poise::serenity_prelude::Context,
@@ -184,7 +165,7 @@ pub async fn handle_button_click(
     ctx_data: &Data,
 ) -> Result<(), Error> {
     if let Some(message_component_interaction) = interaction.message_component() {
-        println!("{:?}",message_component_interaction)
+        println!("{:?}", message_component_interaction)
     }
     Ok(())
 }

@@ -19,7 +19,8 @@ pub async fn handle_interaction_button_flex(
                         let mut new_embed = embed.clone();
                         for field in &mut new_embed.fields {
                             if field.name == role.field_name() {
-                                field.value = format!("<@{}>", message_component_interaction.user.id);
+                                field.value =
+                                    format!("<@{}>", message_component_interaction.user.id);
                             }
                         }
                         let c_embed = CreateEmbed::from(new_embed);
