@@ -1,4 +1,4 @@
-use poise::serenity_prelude::Interaction;
+use poise::serenity_prelude::{ComponentInteraction, Interaction};
 
 use crate::models::{
     data::{Data, User},
@@ -53,38 +53,33 @@ use super::utils::add_user_to_blacklist;
 /// # Dependencies:
 /// - Relies on MongoDB for storing blacklisted users.
 /// - Uses `custom_id` from Discord buttons to identify actions and extract relevant data.
-pub async fn handle_button_click(
+pub async fn handle_interaction_button_black_list(
     ctx: poise::serenity_prelude::Context,
-    interaction: Interaction,
+    message_component_interaction: ComponentInteraction,
     ctx_data: &Data,
 ) -> Result<(), Error> {
-    if let Some(message_component_interaction) = interaction.message_component() {
-        let custom_id = &message_component_interaction.data.custom_id;
+    let custom_id = &message_component_interaction.data.custom_id;
+    if let Some(data) = custom_id.strip_prefix("blacklist_user:") {
+        let user_id = data;
+        let mongo_client = ctx_data.mongo_client.clone();
+        let collection = mongo_client
+            .database("stat-summoner")
+            .collection::<User>("users");
 
-        if custom_id.starts_with("blacklist_user:") {
-            if let Some(data) = custom_id.strip_prefix("blacklist_user:") {
-                let user_id = data;
-                let mongo_client = ctx_data.mongo_client.clone();
-                let collection = mongo_client
-                    .database("stat-summoner")
-                    .collection::<User>("users");
+        if let Err(e) = add_user_to_blacklist(&collection, user_id).await {
+            log::error!("Erreur lors de l'ajout à la blacklist : {:?}", e);
+        }
 
-                if let Err(e) = add_user_to_blacklist(&collection, user_id).await {
-                    log::error!("Erreur lors de l'ajout à la blacklist : {:?}", e);
-                }
-
-                if let Err(e) = ctx
-                    .http
-                    .delete_message(
-                        message_component_interaction.channel_id,
-                        message_component_interaction.message.id,
-                        None,
-                    )
-                    .await
-                {
-                    log::error!("Erreur lors de la suppression du message : {:?}", e);
-                }
-            }
+        if let Err(e) = ctx
+            .http
+            .delete_message(
+                message_component_interaction.channel_id,
+                message_component_interaction.message.id,
+                None,
+            )
+            .await
+        {
+            log::error!("Erreur lors de la suppression du message : {:?}", e);
         }
     }
     Ok(())

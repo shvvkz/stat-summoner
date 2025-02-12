@@ -1,3 +1,4 @@
+pub mod askingforflex;
 pub mod championsinfos;
 pub mod followgames;
 pub mod lolstats;
