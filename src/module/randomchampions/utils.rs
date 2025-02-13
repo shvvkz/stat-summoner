@@ -158,8 +158,8 @@ async fn get_champions_with_no_role(
 /// # Dependencies:
 /// - Requires the `rand` crate for generating a random index.
 pub fn get_random_champion(champions: Vec<ChampionData>) -> ChampionData {
-    let mut rng = rand::thread_rng();
-    let index = rng.gen_range(0..champions.len());
+    let mut rng = rand::rng();
+    let index = rng.random_range(0..champions.len());
     let champion = &champions[index];
     champion.clone()
 }
