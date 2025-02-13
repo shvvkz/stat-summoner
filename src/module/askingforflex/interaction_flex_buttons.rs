@@ -78,8 +78,6 @@ pub async fn handle_interaction_button_flex(
             if let Some(embed) = embed {
                 let mut new_embed = embed.clone();
                 let mut user_already_set = false;
-
-                // Check if the user is already set in any field
                 for field in &new_embed.fields {
                     if field.value == user_mention {
                         user_already_set = true;
@@ -90,10 +88,8 @@ pub async fn handle_interaction_button_flex(
                 for field in &mut new_embed.fields {
                     if field.name == role.field_name(&collection).await? {
                         if field.value == user_mention {
-                            // If the field value is already the user's mention, set it back to "TBD"
                             field.value = "TBD".to_string();
                         } else if field.value == "TBD" {
-                            // If the field value is "TBD", set it to the user's mention
                             field.value = user_mention.clone();
                         }
                     } else if user_already_set && field.value == user_mention {
@@ -145,23 +141,23 @@ impl Role {
         match self {
             Role::Top => {
                 let emoji = get_emoji(collection_emojis.clone(), "position", "TOP").await?;
-                Ok(format!("Top: {}", emoji))
+                Ok(format!("{}:", emoji))
             }
             Role::Jungle => {
                 let emoji = get_emoji(collection_emojis.clone(), "position", "JUNGLE").await?;
-                Ok(format!("Jungle: {}", emoji))
+                Ok(format!("{}:", emoji))
             }
             Role::Mid => {
                 let emoji = get_emoji(collection_emojis.clone(), "position", "MIDDLE").await?;
-                Ok(format!("Mid: {}", emoji))
+                Ok(format!("{}:", emoji))
             }
             Role::ADC => {
                 let emoji = get_emoji(collection_emojis.clone(), "position", "BOTTOM").await?;
-                Ok(format!("ADCarry: {}", emoji))
+                Ok(format!("{}:", emoji))
             }
             Role::Support => {
                 let emoji = get_emoji(collection_emojis.clone(), "position", "SUPPORT").await?;
-                Ok(format!("Support: {}", emoji))
+                Ok(format!("{}:", emoji))
             }
         }
     }
