@@ -375,8 +375,8 @@
 /// # Dependencies:
 /// - Requires the `rand` crate for generating a random index.
 </span><span class="kw">pub fn </span>get_random_champion(champions: Vec&lt;ChampionData&gt;) -&gt; ChampionData {
-    <span class="kw">let </span><span class="kw-2">mut </span>rng = rand::thread_rng();
-    <span class="kw">let </span>index = rng.gen_range(<span class="number">0</span>..champions.len());
+    <span class="kw">let </span><span class="kw-2">mut </span>rng = rand::rng();
+    <span class="kw">let </span>index = rng.random_range(<span class="number">0</span>..champions.len());
     <span class="kw">let </span>champion = <span class="kw-2">&amp;</span>champions[index];
     champion.clone()
 }

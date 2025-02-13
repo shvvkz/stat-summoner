@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {};
+window.SIDEBAR_ITEMS = {"fn":["compute_role_mention","create_flex_embed","parse_flex_modal"]};

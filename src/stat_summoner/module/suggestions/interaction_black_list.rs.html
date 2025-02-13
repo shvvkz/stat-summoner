@@ -84,7 +84,7 @@
 <a href="#83" id="83">83</a>
 <a href="#84" id="84">84</a>
 <a href="#85" id="85">85</a>
-<a href="#86" id="86">86</a></pre></div><pre class="rust"><code><span class="kw">use </span>poise::serenity_prelude::{ComponentInteraction, Interaction};
+<a href="#86" id="86">86</a></pre></div><pre class="rust"><code><span class="kw">use </span>poise::serenity_prelude::ComponentInteraction;
 
 <span class="kw">use </span><span class="kw">crate</span>::models::{
     data::{Data, User},
@@ -93,7 +93,7 @@
 
 <span class="kw">use </span><span class="kw">super</span>::utils::add_user_to_blacklist;
 
-<span class="doccomment">/// Handles interactions with buttons in Discord messages.
+<span class="doccomment">/// Handles blacklist interactions with buttons in Discord messages.
 ///
 /// This function processes button clicks in Discord, specifically those with a `custom_id`
 /// starting with `blacklist_user:`. It extracts the user ID and username from the `custom_id`,
@@ -115,7 +115,7 @@
 ///
 /// # Example:
 /// ```rust
-/// handle_button_click(ctx, interaction, ctx_data).await?;
+/// handle_interaction_button_black_list(ctx, message_component_interaction, ctx_data).await?;
 /// ```
 ///
 /// When a moderator clicks the "Blacklist User" button on a suggestion, the following actions occur:
