@@ -7,7 +7,7 @@ use crate::models::{
 
 use super::utils::add_user_to_blacklist;
 
-/// Handles interactions with buttons in Discord messages.
+/// Handles blacklist interactions with buttons in Discord messages.
 ///
 /// This function processes button clicks in Discord, specifically those with a `custom_id`
 /// starting with `blacklist_user:`. It extracts the user ID and username from the `custom_id`,
@@ -29,7 +29,7 @@ use super::utils::add_user_to_blacklist;
 ///
 /// # Example:
 /// ```rust
-/// handle_button_click(ctx, interaction, ctx_data).await?;
+/// handle_interaction_button_black_list(ctx, message_component_interaction, ctx_data).await?;
 /// ```
 ///
 /// When a moderator clicks the "Blacklist User" button on a suggestion, the following actions occur:
