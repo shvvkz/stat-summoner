@@ -162,11 +162,7 @@
 <a href="#161" id="161">161</a>
 <a href="#162" id="162">162</a>
 <a href="#163" id="163">163</a>
-<a href="#164" id="164">164</a>
-<a href="#165" id="165">165</a>
-<a href="#166" id="166">166</a>
-<a href="#167" id="167">167</a>
-<a href="#168" id="168">168</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::data::EmojiId;
+<a href="#164" id="164">164</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::models::data::EmojiId;
 <span class="kw">use </span><span class="kw">crate</span>::models::error::Error;
 <span class="kw">use </span><span class="kw">crate</span>::utils::get_emoji;
 <span class="kw">use </span>mongodb::Collection;
@@ -246,9 +242,7 @@
             <span class="kw">if let </span><span class="prelude-val">Some</span>(embed) = embed {
                 <span class="kw">let </span><span class="kw-2">mut </span>new_embed = embed.clone();
                 <span class="kw">let </span><span class="kw-2">mut </span>user_already_set = <span class="bool-val">false</span>;
-
-                <span class="comment">// Check if the user is already set in any field
-                </span><span class="kw">for </span>field <span class="kw">in </span><span class="kw-2">&amp;</span>new_embed.fields {
+                <span class="kw">for </span>field <span class="kw">in </span><span class="kw-2">&amp;</span>new_embed.fields {
                     <span class="kw">if </span>field.value == user_mention {
                         user_already_set = <span class="bool-val">true</span>;
                         <span class="kw">break</span>;
@@ -258,11 +252,9 @@
                 <span class="kw">for </span>field <span class="kw">in </span><span class="kw-2">&amp;mut </span>new_embed.fields {
                     <span class="kw">if </span>field.name == role.field_name(<span class="kw-2">&amp;</span>collection).<span class="kw">await</span><span class="question-mark">? </span>{
                         <span class="kw">if </span>field.value == user_mention {
-                            <span class="comment">// If the field value is already the user's mention, set it back to "TBD"
-                            </span>field.value = <span class="string">"TBD"</span>.to_string();
+                            field.value = <span class="string">"TBD"</span>.to_string();
                         } <span class="kw">else if </span>field.value == <span class="string">"TBD" </span>{
-                            <span class="comment">// If the field value is "TBD", set it to the user's mention
-                            </span>field.value = user_mention.clone();
+                            field.value = user_mention.clone();
                         }
                     } <span class="kw">else if </span>user_already_set &amp;&amp; field.value == user_mention {
                         <span class="comment">// If the user is already set in another field, set that field to "TBD"
@@ -313,23 +305,23 @@
         <span class="kw">match </span><span class="self">self </span>{
             Role::Top =&gt; {
                 <span class="kw">let </span>emoji = get_emoji(collection_emojis.clone(), <span class="string">"position"</span>, <span class="string">"TOP"</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="prelude-val">Ok</span>(<span class="macro">format!</span>(<span class="string">"Top: {}"</span>, emoji))
+                <span class="prelude-val">Ok</span>(<span class="macro">format!</span>(<span class="string">"{}:"</span>, emoji))
             }
             Role::Jungle =&gt; {
                 <span class="kw">let </span>emoji = get_emoji(collection_emojis.clone(), <span class="string">"position"</span>, <span class="string">"JUNGLE"</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="prelude-val">Ok</span>(<span class="macro">format!</span>(<span class="string">"Jungle: {}"</span>, emoji))
+                <span class="prelude-val">Ok</span>(<span class="macro">format!</span>(<span class="string">"{}:"</span>, emoji))
             }
             Role::Mid =&gt; {
                 <span class="kw">let </span>emoji = get_emoji(collection_emojis.clone(), <span class="string">"position"</span>, <span class="string">"MIDDLE"</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="prelude-val">Ok</span>(<span class="macro">format!</span>(<span class="string">"Mid: {}"</span>, emoji))
+                <span class="prelude-val">Ok</span>(<span class="macro">format!</span>(<span class="string">"{}:"</span>, emoji))
             }
             Role::ADC =&gt; {
                 <span class="kw">let </span>emoji = get_emoji(collection_emojis.clone(), <span class="string">"position"</span>, <span class="string">"BOTTOM"</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="prelude-val">Ok</span>(<span class="macro">format!</span>(<span class="string">"ADCarry: {}"</span>, emoji))
+                <span class="prelude-val">Ok</span>(<span class="macro">format!</span>(<span class="string">"{}:"</span>, emoji))
             }
             Role::Support =&gt; {
                 <span class="kw">let </span>emoji = get_emoji(collection_emojis.clone(), <span class="string">"position"</span>, <span class="string">"SUPPORT"</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="prelude-val">Ok</span>(<span class="macro">format!</span>(<span class="string">"Support: {}"</span>, emoji))
+                <span class="prelude-val">Ok</span>(<span class="macro">format!</span>(<span class="string">"{}:"</span>, emoji))
             }
         }
     }
