@@ -44,7 +44,7 @@ use crate::{
 /// - It then searches for the summoner in the participants list and identifies their team and match result (Victory or Defeat).
 /// - The function separates the participants into two teams (the summoner's team and the enemy team) and compares stats for each role.
 /// - It generates JSON-formatted role matchups comparing stats between the summoner's team and their opponents for each role.
-pub fn get_match_details(match_info: &Value, summoner_id: &str) -> Option<Value> {
+pub fn get_match_details(match_info: &Value, puuid: &str) -> Option<Value> {
     let queue_id = match_info["info"]["queueId"].as_i64().unwrap_or(-1);
     let (game_duration_minutes, game_duration_secondes) =
         seconds_to_time(match_info["info"]["gameDuration"].as_u64().unwrap_or(0));
@@ -55,7 +55,7 @@ pub fn get_match_details(match_info: &Value, summoner_id: &str) -> Option<Value>
     let participants = match_info["info"]["participants"].as_array()?;
     let participant = participants
         .iter()
-        .find(|p| p["summonerId"].as_str().unwrap_or("") == summoner_id)?;
+        .find(|p| p["puuid"].as_str().unwrap_or("") == puuid)?;
 
     let team_id = participant["teamId"].as_i64().unwrap_or(0);
     let win = participant["win"].as_bool().unwrap_or(false);
@@ -559,7 +559,6 @@ async fn update_follower_if_new_match(
     collection_emojis: Collection<EmojiId>,
 ) -> Result<(), Error> {
     let puuid = &followed_summoner.puuid;
-    let summoner_id = &followed_summoner.summoner_id;
     let last_match_id = &followed_summoner.last_match_id;
     let guild_id = &followed_summoner.guild_id;
     let client = reqwest::Client::new();
@@ -578,7 +577,7 @@ async fn update_follower_if_new_match(
             .await?;
         send_match_update_to_discord(
             followed_summoner,
-            summoner_id,
+            puuid,
             &match_id_from_riot,
             riot_api_key,
             http,
@@ -655,7 +654,7 @@ async fn get_latest_match_id(
 /// - The Discord message is built using `CreateMessage` and sent asynchronously to the appropriate channel using the Discord API.
 async fn send_match_update_to_discord(
     followed_summoner: &SummonerFollowedData,
-    summoner_id: &str,
+    puuid: &str,
     match_id: &str,
     riot_api_key: &str,
     http: Arc<Http>,
@@ -663,7 +662,7 @@ async fn send_match_update_to_discord(
 ) -> Result<(), Error> {
     let client = reqwest::Client::new();
     let info = get_matchs_info(&client, match_id, riot_api_key).await?;
-    let info_json = get_match_details(&info, summoner_id).unwrap();
+    let info_json = get_match_details(&info, puuid).unwrap();
     let channel_id = serenity::model::id::ChannelId::new(followed_summoner.channel_id);
     let embed = create_embed_loop(&info_json, &followed_summoner.name, collection_emojis).await;
     let builder = CreateMessage::new().add_embed(embed);
@@ -711,8 +710,22 @@ pub async fn fetch_runes(champion_id: &str) -> Result<RunesData, Error> {
     let document = Document::from(body.as_str());
 
     // Logique pour extraire les runes, en utilisant `RunesData` comme la structure finale
-    let first_rune_table = document.find(Class("perksTableOverview")).next().unwrap();
-    let secondary_rune_table = document.find(Class("perksTableOverview")).nth(1).unwrap();
+    let first_rune_table = document
+        .find(Class("perksTableOverview"))
+        .next()
+        .ok_or_else(|| {
+            Box::<dyn std::error::Error + Send + Sync>::from(
+                "Erreur: Impossible de trouver la première table de runes",
+            )
+        })?;
+    let secondary_rune_table = document
+        .find(Class("perksTableOverview"))
+        .nth(1)
+        .ok_or_else(|| {
+            Box::<dyn std::error::Error + Send + Sync>::from(
+                "Erreur: Impossible de trouver la deuxième table de runes",
+            )
+        })?;
 
     let runes = extract_runes(first_rune_table, secondary_rune_table);
     Ok(runes)
@@ -930,4 +943,189 @@ fn clean_alt_text(alt: &str) -> String {
     let cleaned_alt = re_unwanted.replace_all(&cleaned_alt, "").trim().to_string();
 
     cleaned_alt.replace(" ", "")
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ChampionInfo {
+    pub champion_name: String,
+    pub popularity_winrate: String,
+    pub popularity_played_percentage: String,
+    pub ban_rate: String,
+    pub roles: Vec<String>,
+    pub champion_link: String,
+}
+
+/// Extrait le tableau JSON associé à `key` (ex: "rankings") même s'il est imbriqué/multiligne,
+/// puis retourne une liste de `ChampionInfo`.
+/// Si un champion apparaît plusieurs fois, on fusionne ses rôles (sans doublons).
+pub fn extract_info_from_json_arr(s: &str, key: &str) -> Vec<ChampionInfo> {
+    let mut out: Vec<ChampionInfo> = Vec::new();
+    let mut index_by_name: HashMap<String, usize> = HashMap::new();
+
+    let bytes = s.as_bytes();
+    let needle = format!(r#""{}""#, key);
+
+    // 1) trouver "key"
+    let key_pos = match s.find(&needle) {
+        Some(p) => p,
+        None => return out, // clé introuvable -> liste vide
+    };
+
+    // 2) trouver le ':' qui suit
+    let after_key = &s[key_pos + needle.len()..];
+    let colon_rel = match after_key.find(':') {
+        Some(c) => c,
+        None => return out,
+    };
+    let mut i = key_pos + needle.len() + colon_rel + 1;
+
+    // 3) avancer jusqu'au premier '['
+    while i < bytes.len() && bytes[i].is_ascii_whitespace() {
+        i += 1;
+    }
+    if i >= bytes.len() || bytes[i] != b'[' {
+        if let Some(next_bracket) = bytes[i..].iter().position(|&b| b == b'[') {
+            i += next_bracket;
+        } else {
+            return out; // pas de tableau après la clé
+        }
+    }
+
+    // 4) parcourir en comptant les crochets, en ignorant les chaînes
+    let mut depth: i32 = 0;
+    let mut in_string = false;
+    let mut escape = false;
+
+    let mut j = i;
+    while j < bytes.len() {
+        let b = bytes[j];
+
+        if in_string {
+            if escape {
+                escape = false;
+            } else if b == b'\\' {
+                escape = true;
+            } else if b == b'"' {
+                in_string = false;
+            }
+        } else {
+            match b {
+                b'"' => in_string = true,
+                b'[' => depth += 1,
+                b']' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        // On a trouvé la fin du tableau
+                        let slice = &s[i..=j];
+
+                        // Parse le tableau JSON
+                        if let Ok(Value::Array(items)) = serde_json::from_str::<Value>(slice) {
+                            for item in items {
+                                if let Value::Object(obj) = item {
+                                    let champion_name = obj
+                                        .get("championName")
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("<unknown>")
+                                        .to_string();
+
+                                    // popularity.winrate peut être "winrate" ou "winRate", nombre ou string
+                                    let popularity_winrate = obj
+                                        .get("popularity")
+                                        .and_then(|p| p.get("winrate").or_else(|| p.get("winRate")))
+                                        .and_then(|v| v.as_f64())
+                                        .map(|f| format!("{:.4}", f))
+                                        .unwrap_or_default();
+
+                                    let popularity_played_percentage = obj
+                                        .get("popularity")
+                                        .and_then(|p| p.get("playedPercentage"))
+                                        .and_then(|v| v.as_f64())
+                                        .map(|f| format!("{:.4}", f))
+                                        .unwrap_or_default();
+
+                                    let ban_rate = obj
+                                        .get("banRate")
+                                        .and_then(|v| v.as_f64())
+                                        .map(|f| format!("{:.4}", f))
+                                        .unwrap_or_default();
+
+                                    let role_title = obj
+                                        .get("role")
+                                        .and_then(|r| r.get("title"))
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or_default()
+                                        .to_string();
+
+                                    let champion_link = obj
+                                        .get("championLink")
+                                        .and_then(|v| v.as_str())
+                                        .map(|s| {
+                                            // Supprime le préfixe "/champions/builds/" s'il existe
+                                            s.strip_prefix("/champions/builds/")
+                                                .unwrap_or(s)
+                                                .to_string()
+                                        })
+                                        .unwrap_or_default();
+
+                                    // Fusion dans la liste : si champion déjà présent, merge des rôles
+                                    if let Some(&idx) = index_by_name.get(&champion_name) {
+                                        // mettre à jour les champs "non rôles" si vides (on ne sait pas s'il faut écraser)
+                                        if out[idx].popularity_winrate.is_empty()
+                                            && !popularity_winrate.is_empty()
+                                        {
+                                            out[idx].popularity_winrate =
+                                                popularity_winrate.clone();
+                                        }
+                                        if out[idx].popularity_played_percentage.is_empty()
+                                            && !popularity_played_percentage.is_empty()
+                                        {
+                                            out[idx].popularity_played_percentage =
+                                                popularity_played_percentage.clone();
+                                        }
+                                        if out[idx].ban_rate.is_empty() && !ban_rate.is_empty() {
+                                            out[idx].ban_rate = ban_rate.clone();
+                                        }
+                                        if out[idx].champion_link.is_empty()
+                                            && !champion_link.is_empty()
+                                        {
+                                            out[idx].champion_link = champion_link.clone();
+                                        }
+
+                                        // merge du rôle si différent et non vide
+                                        if !role_title.is_empty()
+                                            && !out[idx].roles.iter().any(|r| r == &role_title)
+                                        {
+                                            out[idx].roles.push(role_title);
+                                        }
+                                    } else {
+                                        let mut roles = Vec::new();
+                                        if !role_title.is_empty() {
+                                            roles.push(role_title);
+                                        }
+
+                                        let info = ChampionInfo {
+                                            champion_name: champion_name.clone(),
+                                            popularity_winrate,
+                                            popularity_played_percentage,
+                                            ban_rate,
+                                            roles,
+                                            champion_link,
+                                        };
+                                        out.push(info);
+                                        index_by_name.insert(champion_name, out.len() - 1);
+                                    }
+                                }
+                            }
+                        }
+
+                        break; // on a traité le tableau; on peut sortir
+                    }
+                }
+                _ => {}
+            }
+        }
+        j += 1;
+    }
+
+    out
 }

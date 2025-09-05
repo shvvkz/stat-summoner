@@ -154,6 +154,7 @@ async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleS
         }
     });
     tokio::spawn(async move {
+        println!("Starting champion data fetch loop...");
         loop {
             match fetch_champion_data(&mongo_client_clone_2).await {
                 Ok(_) => log::info!("Champion data updated successfully."),

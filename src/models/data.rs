@@ -13,7 +13,6 @@ pub struct Data {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SummonerFollowedData {
     pub puuid: String,
-    pub summoner_id: String,
     pub name: String,
     pub tag: String,
     pub region: String,

@@ -2,14 +2,15 @@ use futures::executor::block_on;
 use mongodb::bson::{self, doc};
 use mongodb::Client;
 use poise::serenity_prelude as serenity;
-use select::predicate::Predicate;
 use serenity::http::Http;
 use std::sync::Arc;
 use tokio::task;
 
 use crate::models::data::{ChampionData, CoreBuildData, EmojiId, RunesData, SummonerFollowedData};
 use crate::models::error::Error;
-use crate::module::loop_module::utils::{fetch_core_build, fetch_runes};
+use crate::module::loop_module::utils::{
+    extract_info_from_json_arr, fetch_core_build, fetch_runes,
+};
 use crate::module::loop_module::utils::{get_followed_summoners, process_followed_summoner};
 use crate::riot_api::open_dd_json;
 
@@ -105,92 +106,68 @@ pub async fn fetch_champion_data(mongo_client: &Client) -> Result<(), Box<dyn st
 
     let body = res.text().await?;
 
+    // 🔽 Ajoute ce bloc pour afficher les scripts contenant "$(function"
+    std::fs::write("/tmp/champions_builds.html", &body)?;
+
     let results: Vec<ChampionData> = task::spawn_blocking(move || {
-        let document = select::document::Document::from(body.as_str());
         let mut results = Vec::new();
+        let document = select::document::Document::from(body.as_str());
+        for node in document.find(select::predicate::Name("script")) {
+            let text = node.text();
 
-        for node in document
-            .find(select::predicate::Class("data_table").descendant(select::predicate::Name("tr")))
-        {
-            let cells: Vec<_> = node.find(select::predicate::Name("td")).collect();
-            if cells.len() > 5 {
-                let name = cells[1]
-                    .find(select::predicate::Class("name"))
-                    .next()
-                    .unwrap()
-                    .text()
-                    .trim()
-                    .to_string();
-                let role_text = cells[1]
-                    .find(select::predicate::Name("i"))
-                    .next()
-                    .unwrap()
-                    .text();
-                let roles: Vec<String> =
-                    role_text.split(',').map(|r| r.trim().to_string()).collect();
-
-                let popularity = cells[2]
-                    .find(select::predicate::Attr("data-value", ()))
-                    .next()
-                    .unwrap()
-                    .attr("data-value")
-                    .unwrap()
-                    .to_string();
-                let winrate = cells[3]
-                    .find(select::predicate::Attr("data-value", ()))
-                    .next()
-                    .unwrap()
-                    .attr("data-value")
-                    .unwrap()
-                    .to_string();
-                let banrate = cells[4]
-                    .find(select::predicate::Attr("data-value", ()))
-                    .next()
-                    .unwrap()
-                    .attr("data-value")
-                    .unwrap()
-                    .to_string();
-
-                let id_name = dd_json["data"]
-                    .as_object()
-                    .and_then(|data| {
-                        data.values()
-                            .find(|champion| champion["name"].as_str().map_or(false, |n| n == name))
-                    })
-                    .and_then(|champion| champion["id"].as_str())
-                    .unwrap_or(&name)
-                    .to_string();
-                let default_runes = RunesData {
-                    parent_primary_rune: String::new(),
-                    child_primary_rune_1: String::new(),
-                    child_primary_rune_2: String::new(),
-                    child_primary_rune_3: String::new(),
-                    child_secondary_rune_1: String::new(),
-                    child_secondary_rune_2: String::new(),
-                    tertiary_rune_1: String::new(),
-                    tertiary_rune_2: String::new(),
-                    tertiary_rune_3: String::new(),
+            if text.contains("$(function () {\n        ChampionsPage.init") {
+                let lines: Vec<&str> = text.lines().collect();
+                let data = if lines.len() >= 3 {
+                    extract_info_from_json_arr(lines[2], "rankings")
+                } else {
+                    vec![]
                 };
-                let default_core_build = CoreBuildData {
-                    first: String::new(),
-                    second: String::new(),
-                    third: String::new(),
-                };
-                let runes = block_on(fetch_runes(&id_name.to_lowercase())).unwrap_or(default_runes);
 
-                let core_build = block_on(fetch_core_build(&id_name.to_lowercase()))
-                    .unwrap_or(default_core_build);
+                // Debug d’affichage
+                for c in data.iter() {
+                    let default_runes = RunesData {
+                        parent_primary_rune: String::new(),
+                        child_primary_rune_1: String::new(),
+                        child_primary_rune_2: String::new(),
+                        child_primary_rune_3: String::new(),
+                        child_secondary_rune_1: String::new(),
+                        child_secondary_rune_2: String::new(),
+                        tertiary_rune_1: String::new(),
+                        tertiary_rune_2: String::new(),
+                        tertiary_rune_3: String::new(),
+                    };
+                    let default_core_build = CoreBuildData {
+                        first: String::new(),
+                        second: String::new(),
+                        third: String::new(),
+                    };
+                    let runes = block_on(fetch_runes(&c.champion_link)).unwrap_or(default_runes);
 
-                results.push(ChampionData {
-                    name: name,
-                    id_name: id_name,
-                    role: roles,
-                    popularity: popularity,
-                    winrate: winrate,
-                    banrate: banrate,
-                    runes: runes,
-                    core_build: core_build,
-                });
+                    let core_build =
+                        block_on(fetch_core_build(&c.champion_link)).unwrap_or(default_core_build);
+                    let id_name = dd_json["data"]
+                        .as_object()
+                        .and_then(|data| {
+                            data.values().find(|champion| {
+                                champion["name"]
+                                    .as_str()
+                                    .map_or(false, |n| n == c.champion_name)
+                            })
+                        })
+                        .and_then(|champion: &serde_json::Value| champion["id"].as_str())
+                        .unwrap_or(&c.champion_name)
+                        .to_string();
+                    results.push(ChampionData {
+                        name: c.champion_name.clone(),
+                        role: c.roles.clone(),
+                        popularity: c.popularity_played_percentage.clone(),
+                        winrate: c.popularity_winrate.clone(),
+                        banrate: c.ban_rate.clone(),
+                        id_name: id_name.clone(),
+                        runes,
+                        core_build,
+                    });
+                }
             }
         }
         results

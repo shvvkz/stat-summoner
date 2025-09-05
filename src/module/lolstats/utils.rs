@@ -299,7 +299,7 @@ async fn extract_champions_info(
 async fn extract_match_info(
     match_ids: Vec<String>,
     ctx: &poise::ApplicationContext<'_, Data, Error>,
-    summoner_id: String,
+    puuid: String,
 ) -> Vec<Value> {
     let mut match_details = Vec::<Value>::new();
     for id in &match_ids {
@@ -311,7 +311,7 @@ async fn extract_match_info(
             let participants = info["info"]["participants"].as_array().unwrap();
             if let Some(participant) = participants
                 .iter()
-                .find(|p| p["summonerId"].as_str().unwrap() == summoner_id)
+                .find(|p| p["puuid"].as_str().unwrap() == puuid)
             {
                 let champion_name = participant["championName"].as_str().unwrap_or("Unknown");
                 let kills = participant["kills"].as_u64().unwrap_or(0);

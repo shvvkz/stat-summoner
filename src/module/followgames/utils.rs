@@ -41,7 +41,6 @@ pub async fn check_and_add_in_db(
     modal_data: FollowGamesModal,
     region_str: String,
     puuid: String,
-    summoner_id: String,
     match_id: String,
     time_end_follow: String,
 ) -> Result<(), Error> {
@@ -74,7 +73,6 @@ pub async fn check_and_add_in_db(
                 let channel_id = ctx.channel_id().get();
                 let new_followed_summoner = SummonerFollowedData {
                     puuid: puuid.clone(),
-                    summoner_id: summoner_id.clone(),
                     name: modal_data.game_name.clone(),
                     tag: modal_data.tag_line.clone(),
                     region: region_str.to_string(),
@@ -104,7 +102,6 @@ pub async fn check_and_add_in_db(
             let channel_id = ctx.channel_id().get();
             let new_followed_summoner = SummonerFollowedData {
                 puuid: puuid.clone(),
-                summoner_id: summoner_id.clone(),
                 name: modal_data.game_name.clone(),
                 tag: modal_data.tag_line.clone(),
                 region: region_str.to_string(),

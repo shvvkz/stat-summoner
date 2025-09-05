@@ -9,7 +9,7 @@ use crate::models::error::Error;
 use crate::models::modal::LolStatsModal;
 use crate::models::region::Region;
 use crate::module::lolstats::utils::create_and_send_embed_lolstats;
-use crate::riot_api::{get_champions, get_matchs_id, get_puuid, get_rank_info, get_summoner_id};
+use crate::riot_api::{get_champions, get_matchs_id, get_puuid, get_rank_info};
 use crate::utils::{determine_solo_flex, manage_user, region_to_string};
 
 /// Fetches and displays LoL player stats based on user input.
@@ -96,20 +96,20 @@ pub async fn lolstats(
             return Ok(());
         }
     };
-
-    let summoner_id =
-        match get_summoner_id(&client, &region_str, &puuid, &ctx.data().riot_api_key).await {
-            Ok(id) => id,
-            Err(e) => {
-                let error_message = format!("Error fetching summoner ID: {}", e);
-                let reply = ctx.send(create_embed_error(&error_message)).await?;
-                schedule_message_deletion(reply, ctx).await?;
-                return Ok(());
-            }
-        };
+    // println!("PUUID: {}", puuid);
+    // let summoner_id =
+    //     match get_summoner_id(&client, &region_str, &puuid, &ctx.data().riot_api_key).await {
+    //         Ok(id) => id,
+    //         Err(e) => {
+    //             let error_message = format!("Error fetching summoner ID: {}", e);
+    //             let reply = ctx.send(create_embed_error(&error_message)).await?;
+    //             schedule_message_deletion(reply, ctx).await?;
+    //             return Ok(());
+    //         }
+    //     };
 
     let (rank_info_res, champions_res, match_ids_res) = join!(
-        get_rank_info(&client, &region_str, &summoner_id, &ctx.data().riot_api_key),
+        get_rank_info(&client, &region_str, &puuid, &ctx.data().riot_api_key),
         get_champions(&client, &puuid, &region_str, &ctx.data().riot_api_key),
         get_matchs_id(&client, &puuid, &ctx.data().riot_api_key, 5)
     );
@@ -171,7 +171,7 @@ pub async fn lolstats(
         .collection::<EmojiId>("emojis_id");
     let reply = create_and_send_embed_lolstats(
         &modal_data,
-        summoner_id,
+        puuid,
         &solo_rank,
         &flex_rank,
         champions,

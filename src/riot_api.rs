@@ -100,59 +100,6 @@ pub async fn get_matchs_id(
     Ok(matchs_id)
 }
 
-/// ⚙️ **Function**: Fetches the summoner ID for a player using their PUUID.
-///
-/// This function sends a request to the Riot API to retrieve the summoner ID of a player, which is used for further
-/// requests related to match history and player information. The summoner ID is specific to the player's account in
-/// the given region.
-///
-/// # Parameters:
-/// - `client`: An instance of the `reqwest::Client` used to send HTTP requests.
-/// - `region_str`: A string representing the region (e.g., `euw1`, `na1`, `kr`) where the player's account is located.
-/// - `puuid`: The player's unique PUUID (Player Unique Identifier), which is used to identify them across Riot's services.
-/// - `riot_api_key`: The API key used to authenticate the request with the Riot API.
-///
-/// # Returns:
-/// - `Result<String, Error>`: The summoner ID as a string if the request is successful, or an error if the player cannot be found or the request fails.
-///
-/// # ⚠️ Notes:
-/// - If the summoner ID cannot be retrieved (e.g., due to incorrect region or PUUID), the function logs an error and returns an appropriate message.
-/// - The summoner ID is required for many other API requests, such as retrieving ranked data and match history.
-///
-/// # Example:
-/// ```rust
-/// let summoner_id = get_summoner_id(&client, "euw1", "abcd1234-efgh5678-ijkl91011-mnop1213", riot_api_key).await?;
-/// ```
-///
-/// The resulting `summoner_id` will be a unique string, such as:
-/// ```text
-/// "abcdef1234567890abcdef1234567890"
-/// ```
-pub async fn get_summoner_id(
-    client: &Client,
-    region_str: &str,
-    puuid: &str,
-    riot_api_key: &str,
-) -> Result<String, Error> {
-    let summoner_url = format!(
-        "https://{}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{}?api_key={}",
-        region_str, puuid, riot_api_key
-    );
-
-    let response = client.get(&summoner_url).send().await?;
-    let summoner_json: Value = response.json().await?;
-    let summoner_id = summoner_json
-        .get("id")
-        .and_then(Value::as_str)
-        .unwrap_or("")
-        .to_string();
-    if summoner_id.is_empty() {
-        Err("Error retrieving summoner ID. Please verify that the region, game name, and tag line you provided are correct, and try again.".into())
-    } else {
-        Ok(summoner_id)
-    }
-}
-
 /// ⚙️ **Function**: Fetches ranked information for a player using their summoner ID.
 ///
 /// This function sends a request to the Riot API to retrieve ranked information for a player, including their rank,
@@ -204,7 +151,7 @@ pub async fn get_rank_info(
     riot_api_key: &str,
 ) -> Result<Vec<HashMap<String, Value>>, Error> {
     let rank_url = format!(
-        "https://{}.api.riotgames.com/lol/league/v4/entries/by-summoner/{}?api_key={}",
+        "https://{}.api.riotgames.com/lol/league/v4/entries/by-puuid/{}?api_key={}",
         region_str, summoner_id, riot_api_key
     );
     let response = client.get(&rank_url).send().await?;

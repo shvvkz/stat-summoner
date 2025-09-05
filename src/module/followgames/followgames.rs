@@ -9,7 +9,7 @@ use crate::models::error::Error;
 use crate::models::modal::FollowGamesModal;
 use crate::models::region::Region;
 use crate::module::followgames::utils::check_and_add_in_db;
-use crate::riot_api::{get_matchs_id, get_puuid, get_summoner_id};
+use crate::riot_api::{get_matchs_id, get_puuid};
 use crate::utils::manage_user;
 use crate::utils::region_to_string;
 
@@ -109,16 +109,6 @@ pub async fn followgames(
         }
     };
 
-    let summoner_id =
-        match get_summoner_id(&client, &region_str, &puuid, &ctx.data().riot_api_key).await {
-            Ok(id) => id,
-            Err(e) => {
-                let error_message = format!("{}", e);
-                let reply = ctx.send(create_embed_error(&error_message)).await?;
-                schedule_message_deletion(reply, ctx).await?;
-                return Ok(());
-            }
-        };
     let match_id = get_matchs_id(&client, &puuid, &ctx.data().riot_api_key, 1)
         .await
         .unwrap()[0]
@@ -138,7 +128,6 @@ pub async fn followgames(
         modal_data,
         region_str,
         puuid,
-        summoner_id,
         match_id,
         time_end_follow,
     )
