@@ -1,6 +1,6 @@
 [package]
 name = "stat-summoner"
-version = "0.7.2"
+version = "0.7.3"
 edition = "2021"
 publish = true
 authors = ["shvvkz"]
